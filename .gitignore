@@ -2,3 +2,4 @@ __*
 .env
 testbot.py
 text.json
+.venv
