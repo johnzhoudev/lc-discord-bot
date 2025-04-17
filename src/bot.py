@@ -59,17 +59,6 @@ async def on_ready():
 
 
 # Commmands
-# TODO: Remove this, extraneous
-@bot.command()
-async def hello(ctx):
-
-    # Ignore if not from bot channel
-    if ctx.channel != bot_data.bot_channel:
-        return
-
-    await ctx.reply("Hello!")
-
-
 async def post_question(post: Post):
     try:
         question_data = scrape_question(post.url)
