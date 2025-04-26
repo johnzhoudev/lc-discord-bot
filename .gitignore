@@ -3,3 +3,4 @@ __*
 testbot.py
 text.json
 .venv
+.ruff_cache

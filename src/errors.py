@@ -4,7 +4,7 @@ from datetime import datetime
 class Error:
     def __init__(self, msg: str, displayed_msg: str = ""):
         self.msg = msg
-        self.displayed_msg = format_error_text(displayed_msg if displayed_msg else msg)
+        self.displayed_msg = _format_error_text(displayed_msg if displayed_msg else msg)
 
 
 class FailedScrapeError(Error):
@@ -15,7 +15,7 @@ class FailedScrapeError(Error):
 
 class ScheduledDateInPastError(Error):
     def __init__(self, date: datetime):
-        displayed_msg = f"Scheduled time {date.strftime("%Y-%m-%d %H:%M")} is in the past. Please provide a time in the future."
+        displayed_msg = f"Scheduled time {date.strftime('%Y-%m-%d %H:%M')} is in the past. Please provide a time in the future."
         super().__init__(displayed_msg)
 
 
@@ -57,5 +57,5 @@ class InvalidNumberOfRepeatsError(Error):
         super().__init__(f"rpts must be >= -1, {rpts}", displayed_msg)
 
 
-def format_error_text(msg: str = "An unexpected error occurred"):
+def _format_error_text(msg: str = "An unexpected error occurred"):
     return f"Error: {msg}"

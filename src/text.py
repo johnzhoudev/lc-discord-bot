@@ -18,4 +18,4 @@ React with :white_check_mark:  if you do it. Also rank personal enjoyment of the
 
 
 def get_schedule_post_response_text(url: str, date: datetime):
-    return f"Added question: {url} to be posted at {date.strftime("%Y-%m-%d %H:%M")}"
+    return f"Added question: {url} to be posted at {date.strftime('%Y-%m-%d %H:%M')}"

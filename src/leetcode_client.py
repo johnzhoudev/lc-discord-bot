@@ -5,6 +5,13 @@ from dataclasses import dataclass
 
 import requests
 
+@dataclass(frozen=True)
+class QuestionData:
+    id: int
+    title: str
+    desc: str
+    difficulty: str
+
 
 def get_question_title_data(titleSlug: str):
     url = "https://leetcode.com/graphql/"
@@ -38,15 +45,6 @@ def get_question_content_data(titleSlug: str):
 
 def get_slug_from_url(url: str):
     return url.split("problems/")[1].split("/")[0]
-
-
-@dataclass(frozen=True)
-class QuestionData:
-    id: int
-    title: str
-    desc: str
-    difficulty: str
-
 
 def scrape_question(url: str):
     slug = get_slug_from_url(url)

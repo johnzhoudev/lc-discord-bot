@@ -98,7 +98,7 @@ class DateGenerator:
         return True
 
 
-with open("blind_75.csv", "r", encoding="utf-16") as file:
-    csv_reader = csv.reader(file, delimiter=",", lineterminator="\n")
-    for row in csv_reader:
-        print(row)
+# with open("blind_75.csv", "r", encoding="utf-16") as file:
+#     csv_reader = csv.reader(file, delimiter=",", lineterminator="\n")
+#     for row in csv_reader:
+#         print(row)
