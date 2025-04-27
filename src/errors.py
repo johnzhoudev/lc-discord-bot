@@ -1,7 +1,7 @@
 from datetime import datetime
 
 
-class Error:
+class Error(BaseException):
     def __init__(self, msg: str, displayed_msg: str = ""):
         self.msg = msg
         self.displayed_msg = _format_error_text(displayed_msg if displayed_msg else msg)
