@@ -4,9 +4,11 @@ from posts import ScheduledPost
 from enum import Enum
 from typing import Dict
 
+
 class Channel(Enum):
     MAIN = 1
     BOT = 2
+
 
 class LeetcodeBot:
     channels: Dict[Channel, TextChannel] = {}

@@ -63,11 +63,13 @@ async def on_ready():
 async def post_question(post: Post):
     try:
         question_data = scrape_question(post.url)
-    except:
+    except Exception:
         await handle_error(FailedScrapeError(post.url))
         return
 
-    await lc_bot.send(get_question_text(question_data.title, post.url, post.desc), Channel.MAIN)
+    await lc_bot.send(
+        get_question_text(question_data.title, post.url, post.desc), Channel.MAIN
+    )
 
 
 @bot.command()
@@ -136,7 +138,7 @@ def parse_days(days_str: str):
 async def schedulePost(ctx, date_str: str, url: str, desc: Optional[str] = None):
     try:
         date = parse_date_str(date_str)
-    except:
+    except Exception:
         await handle_error(FailedToParseDateStringError(date_str))
         return
 
@@ -144,8 +146,12 @@ async def schedulePost(ctx, date_str: str, url: str, desc: Optional[str] = None)
         await handle_error(ScheduledDateInPastError(date))
         return
 
-    get_post = lambda: Post(url, desc)
-    should_post = lambda curtime: curtime < date
+    def get_post():
+        return Post(url, desc)
+
+    def should_post(curtime):
+        return curtime < date
+
     lc_bot.scheduled_posts.append(ScheduledPost(get_post, should_post))
 
     await ctx.send(get_schedule_post_response_text(url, date))
@@ -157,7 +163,7 @@ async def scheduleRandom(ctx, time_str: str, days_str: str, rpts: int = -1):
 
     try:
         time = parse_time_str(time_str)
-    except:
+    except ValueError:
         await handle_error(FailedToParseTimeStringError(time_str))
         return
 
@@ -172,7 +178,9 @@ async def scheduleRandom(ctx, time_str: str, days_str: str, rpts: int = -1):
         return
 
     # TODO: Fix get random post
-    get_post = lambda: Post("asdf", "asdf")
+    def get_post():
+        return Post("asdf", "asdf")
+
     should_post = DateGenerator(days, time, datetime.now())
     lc_bot.scheduled_posts.append(ScheduledPost(get_post, should_post, repeats=rpts))
 

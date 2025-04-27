@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 import requests
 
+
 @dataclass(frozen=True)
 class QuestionData:
     id: int
@@ -45,6 +46,7 @@ def get_question_content_data(titleSlug: str):
 
 def get_slug_from_url(url: str):
     return url.split("problems/")[1].split("/")[0]
+
 
 def scrape_question(url: str):
     slug = get_slug_from_url(url)
