@@ -24,8 +24,9 @@ class FailedToParseDateStringError(Error):
         displayed_msg = """Failed to parse date str. 
 Supported formats:
 - hh:mm (24 hour)
-- yyyy-nn-dd-hh:mm (24 hour)
+- yyyy-mm-dd-hh:mm (24 hour)
 - Jan 3, 2025 18:30
+- January 3, 2025 18:30
 """
         super().__init__(f"Failed To Parse date string: {date_str}", displayed_msg)
 

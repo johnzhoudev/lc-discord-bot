@@ -39,8 +39,14 @@ def parse_date_str(date_str: str):
     except ValueError:
         pass
 
-    # Try with regular month name
-    newDate = datetime.strptime(date_str, "%b %d, %Y %H:%M")
+    # Try with regular month name (short form)
+    try:
+        newDate = datetime.strptime(date_str, "%b %d, %Y %H:%M")
+        return newDate
+    except ValueError:
+        pass
+
+    newDate = datetime.strptime(date_str, "%B %d, %Y %H:%M")
     return newDate
 
 
@@ -60,7 +66,7 @@ def parse_days(days_str: str):
     output = []
     days = ["mo", "tu", "we", "th", "fr", "sa", "su"]
 
-    for idx, day in days:
+    for idx, day in enumerate(days):
         if day in days_str:
             output.append(idx)
 
