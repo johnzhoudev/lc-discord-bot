@@ -7,7 +7,7 @@ from discord.channel import TextChannel
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
-from errors import (
+from src.errors import (
     Error,
     FailedScrapeError,
     FailedToParseDateStringError,
@@ -16,10 +16,10 @@ from errors import (
     InvalidNumberOfRepeatsError,
     ScheduledDateInPastError,
 )
-from leetcode_bot_logic import Channel, LeetcodeBot
-from posts import DateGenerator, Post, ScheduledPost
-from text import get_schedule_post_response_text
-from utils import (
+from src.leetcode_bot_logic import Channel, LeetcodeBot
+from src.posts import DateGenerator, Post, ScheduledPost
+from src.text import get_schedule_post_response_text
+from src.utils import (
     get_int_from_env,
     get_from_env,
     parse_date_str,

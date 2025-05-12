@@ -1,13 +1,13 @@
 import logging
 from discord.channel import TextChannel
 
-from errors import FailedScrapeError
-from leetcode_client import LeetcodeClient
-from posts import Post, ScheduledPost
+from src.errors import FailedScrapeError
+from src.leetcode_client import LeetcodeClient
+from src.posts import Post, ScheduledPost
 from enum import Enum
 from typing import Dict
 
-from text import get_question_text
+from src.text import get_question_text
 
 
 class Channel(Enum):
