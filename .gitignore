@@ -6,3 +6,4 @@ text.json
 .venv
 .ruff_cache
 .pytest_cache
+.terraform
