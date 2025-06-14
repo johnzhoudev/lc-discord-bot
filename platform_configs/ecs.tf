@@ -23,6 +23,14 @@ resource "aws_ecs_service" "lc_discord_bot_service" {
   task_definition = aws_ecs_task_definition.lc_discord_bot.arn
   desired_count   = 1
   launch_type     = "EC2"
+
+  volume_configuration { # ignore
+    name = "lc-discord-bot-volume"
+    managed_ebs_volume {
+        role_arn = "${aws_iam_role.ecs_infrastructure_role.arn}"
+        size_in_gb = 2
+    }
+  }
 }
 
 # This is a template ecs_task definition. Github actions will copy this task definition, modify it, and redeploy.
@@ -50,8 +58,17 @@ resource "aws_ecs_task_definition" "lc_discord_bot" {
           awslogs-stream-prefix = "ecs"
         }
       }
+
+      volume = {
+        name = "lc-discord-bot-volume"
+        
+      }
+
+
     }
   ])
+
+
 }
 
 # Logging, log groups

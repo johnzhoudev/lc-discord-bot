@@ -87,3 +87,22 @@ resource "aws_iam_role_policy_attachment" "ecs_instance_role_policy" {
   role       = aws_iam_role.ecs_instance_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
 }
+
+# IAM Role for ECS managed ebs volume
+# https://docs.aws.amazon.com/AmazonECS/latest/developerguide/infrastructure_IAM_role.html
+resource "aws_iam_role" "ecs_infrastructure_role" {
+  name = "ecsInfrastructureRole"
+
+  assume_role_policy = jsonencode({
+    Action = "sts:AssumeRole"
+    Effect = "Allow"
+    Principal = {
+      Service = "ecs.amazonaws.com"
+    }
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_infrastructure_role_policy" {
+  role = aws_iam_role.ecs_infrastructure_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSInfrastructureRolePolicyForVolumes"
+}
