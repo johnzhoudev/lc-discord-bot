@@ -79,7 +79,7 @@ async def on_ready():
     # Start background scheduler
     check_for_scheduled_posts.start()
 
-    await lc_bot.send("Hello! LC-Bot is ready!", Channel.BOT)
+    await lc_bot.send("Hello! LC-Bot is ready! Hey Gina!", Channel.BOT)
 
 
 @bot.command()
