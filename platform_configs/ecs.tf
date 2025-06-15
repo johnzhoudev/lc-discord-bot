@@ -76,10 +76,10 @@ data "aws_ssm_parameter" "ecs_ami" {
 # 4. EC2 instance with ECS agent and cluster name
 resource "aws_instance" "ecs_instance" {
   ami           = "ami-0ec3e36ea5ad3df41" # 86x64 for us-east-1
-  instance_type = "t3.nano"
+  instance_type = "t2.micro"
 
   iam_instance_profile = aws_iam_instance_profile.ecs_instance_profile.name
-  security_groups      = [aws_security_group.ecs_sg.name]
+  vpc_security_group_ids      = [aws_security_group.ecs_sg.id]
   subnet_id            = aws_default_subnet.default_us_east_1.id
 
   user_data = <<-EOF
