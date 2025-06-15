@@ -14,7 +14,7 @@ def parse_date_str(date_str: str):
         )
 
         if newDate < now:  # schedule for next day
-            newDate += timedelta(days=1)
+            newDate += timedelta(days=2)
 
         return newDate
     except ValueError:
