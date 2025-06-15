@@ -1,3 +1,4 @@
+import argparse
 import logging
 from datetime import datetime
 from typing import Optional, cast
@@ -19,24 +20,42 @@ from src.errors import (
 from src.leetcode_bot_logic import Channel, LeetcodeBot
 from src.posts import DateGenerator, Post, ScheduledPost
 from src.text import get_schedule_post_response_text
-from src.utils import (
-    get_int_from_env,
-    get_from_env,
+from src.utils.string import (
     parse_date_str,
     parse_days,
     parse_time_str,
 )
-
-# Env Setup
-load_dotenv()
-BOT_TOKEN = get_from_env("BOT_TOKEN")
-BOT_CHANNEL_ID = get_int_from_env("BOT_CHANNEL_ID")
-MAIN_CHANNEL_ID = get_int_from_env("MAIN_CHANNEL_ID")
-TEXT_JSON_FILE = get_from_env("TEXT_JSON_FILE")
+from src.utils.boto3 import get_bot_token_from_ssm
+from src.utils.environment import (
+    get_int_from_env,
+    get_from_env,
+)
 
 # Logging Setup
 log = logging.getLogger("Bot")
 logging.basicConfig(level=logging.INFO)
+log.info("Starting discord bot")
+
+# Parse Arguments
+parser = argparse.ArgumentParser()
+parser.add_argument("-d", "--dev", action="store_true", help="Enable development mode")
+args = parser.parse_args()
+is_dev = args.dev
+log.info(f"is_dev: {is_dev}")
+
+# Env Setup
+load_dotenv()
+
+if is_dev:
+    log.info("Loading bot token from env")
+    BOT_TOKEN = get_from_env("BOT_TOKEN")
+else:
+    log.info("Loading bot token from ssm")
+    BOT_TOKEN = get_bot_token_from_ssm()
+
+BOT_CHANNEL_ID = get_int_from_env("BOT_CHANNEL_ID")
+MAIN_CHANNEL_ID = get_int_from_env("MAIN_CHANNEL_ID")
+TEXT_JSON_FILE = get_from_env("TEXT_JSON_FILE")
 
 # Bot Setup
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
