@@ -1,5 +1,9 @@
 name: build-and-deploy
 
+permissions:
+  id-token: write
+  contents: read
+
 on:
   push:
     branches:
@@ -12,7 +16,14 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4.1.0
+        with:
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::273354659414:role/github-actions-role
 
       - name: test
         run: |
           echo "Hello, world!"
+          aws sts get-caller-identity

@@ -7,3 +7,4 @@ text.json
 .ruff_cache
 .pytest_cache
 .terraform
+terraform.tfvars
