@@ -46,20 +46,8 @@ jobs:
         run: |
           aws ecs update-service --cluster $CLUSTER --service $SERVICE_NAME --force-new-deployment
 
-          echo "✅ Deployment triggered. Watch progress at:"
           echo "🧭 ECS Service Details:"
           echo "https://$REGION.console.aws.amazon.com/ecs/v2/clusters/$CLUSTER/services/$SERVICE_NAME/details?region=$REGION"
 
           echo "📜 ECS Service Logs:"
           echo "https://$REGION.console.aws.amazon.com/ecs/v2/clusters/$CLUSTER/services/$SERVICE_NAME/logs?region=$REGION"
-
-      # - name: Wait for service stable
-      #   env:
-      #     CLUSTER: lc-discord-bot
-      #     SERVICE_NAME: lc-discord-bot
-      #     REGION: us-east-1
-      #   run: |
-      #     echo "Waiting for services stable"
-          # aws ecs wait services-stable --cluster $CLUSTER --service $SERVICE_NAME
-
-
