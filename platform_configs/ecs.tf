@@ -22,6 +22,11 @@ resource "aws_ecs_service" "lc_discord_bot_service" {
   cluster         = aws_ecs_cluster.lc_discord_bot_cluster.arn
   task_definition = aws_ecs_task_definition.lc_discord_bot.arn
   desired_count   = 1
+
+  # Hack to force shutdown before re-deployment. Minimum is 0, but maximum is 100
+  deployment_maximum_percent = 100
+  deployment_minimum_healthy_percent = 0
+
   launch_type     = "EC2"
 }
 
