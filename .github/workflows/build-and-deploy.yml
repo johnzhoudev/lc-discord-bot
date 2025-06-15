@@ -38,7 +38,16 @@ jobs:
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
           docker push $REGISTRY/$REPOSITORY:latest
 
-      - name: test
+      - name: Update ECS Service
+        env:
+          CLUSTER: lc-discord-bot
+          SERVICE_NAME: lc-discord-bot
+          REGION: us-east-1
         run: |
-          echo "Hello, world!"
-          aws sts get-caller-identity
+          aws ecs update-service --cluster $CLUSTER --service $SERVICE_NAME --force-new-deployment
+
+          echo "✅ Deployment triggered. Watch progress at:"
+          echo "https://console.aws.amazon.com/ecs/home?region=$REGION#/clusters/$CLUSTER/services/$SERVICE_NAME/details"
+
+          # aws ecs wait services-stable --cluster $CLUSTER --service $SERVICE_NAME
+
