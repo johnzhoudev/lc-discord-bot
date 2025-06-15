@@ -40,7 +40,7 @@ resource "aws_ecs_task_definition" "lc_discord_bot" {
       # TODO: Memory and cpu limits?
       # No need for port mappings since outbound only
       essential = true # If this stops, all other containers in the task stop too.
-      memory    = 128  # 128 mb
+      memory    = 128
 
       logConfiguration = {
         logDriver = "awslogs"
@@ -78,9 +78,9 @@ resource "aws_instance" "ecs_instance" {
   ami           = "ami-0ec3e36ea5ad3df41" # 86x64 for us-east-1
   instance_type = "t2.micro"
 
-  iam_instance_profile = aws_iam_instance_profile.ecs_instance_profile.name
-  vpc_security_group_ids      = [aws_security_group.ecs_sg.id]
-  subnet_id            = aws_default_subnet.default_us_east_1.id
+  iam_instance_profile   = aws_iam_instance_profile.ecs_instance_profile.name
+  vpc_security_group_ids = [aws_security_group.ecs_sg.id]
+  subnet_id              = aws_default_subnet.default_us_east_1.id
 
   user_data = <<-EOF
               #!/bin/bash
