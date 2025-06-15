@@ -1,0 +1,23 @@
+name: run-tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up python 3.13.2
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.2'
+      
+      - name: Run tests
+        run: |
+          pytest
