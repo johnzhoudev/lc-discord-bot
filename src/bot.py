@@ -68,6 +68,19 @@ async def handle_error(error: Error):
     await lc_bot.send(error.displayed_msg, Channel.BOT)
 
 
+@bot.check
+def validate_channel(ctx):
+    return ctx.channel.id == BOT_CHANNEL_ID
+
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CheckFailure):
+        log.warning("Used command in wrong channel.")
+    else:
+        raise error
+
+
 @bot.event
 async def on_ready():
     log.info("LC-Bot Ready")
