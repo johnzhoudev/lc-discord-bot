@@ -32,8 +32,8 @@ from src.utils.environment import (
 )
 
 # Logging Setup
-log = logging.getLogger("Bot")
 logging.basicConfig(level=logging.INFO)
+log = logging.getLogger("Bot")
 log.info("Starting discord bot")
 
 # Parse Arguments

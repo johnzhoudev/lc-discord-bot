@@ -5,7 +5,6 @@ from typing import Callable, Optional, Sequence
 
 # Logging Setup
 log = logging.getLogger("Discord Bot, Posts")
-logging.basicConfig(level=logging.INFO)
 
 
 @dataclass
