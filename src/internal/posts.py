@@ -91,6 +91,9 @@ class Scheduler:
     Class to use in practice. Sets up internal get_post function and scheduler.
     """
 
+    _id_counter: ClassVar[int] = 0
+
+    id: int
     __get_post_func: Callable[[], Post]
     __should_post_func: Callable[
         [datetime], bool
@@ -103,6 +106,9 @@ class Scheduler:
         should_post_func: Callable[[datetime], bool],
         repeats: int = 1,
     ):
+        self.id = type(self)._id_counter  # Use type(self) to support inheritance
+        type(self)._id_counter += 1
+
         self.__get_post_func = get_post_func
         self.__should_post_func = should_post_func
         self.repeats = repeats
@@ -123,4 +129,4 @@ class Scheduler:
 
     # TODO: Work on this!
     def __str__(self):
-        return f"{self.repeats}"
+        return f"{self.id}: Repeats={self.repeats}"

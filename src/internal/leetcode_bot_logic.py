@@ -6,6 +6,7 @@ from src.types.command_inputs import PostCommandArgs
 from src.types.errors import (
     Error,
     FailedScrapeError,
+    FailedToGetPostError,
     FailedToParseDateStringError,
     ScheduledDateInPastError,
 )
@@ -83,6 +84,31 @@ class LeetcodeBot:
             # Immediately post question
             post = PostGenerator(**args.model_dump(exclude_none=True))()
             await self.post_question(post)
+
+    async def handle_check_for_scheduled_posts(self):
+        curtime = datetime.now()
+
+        # Make shallow copy so can be reused
+        for scheduled_post in self.scheduled_posts[:]:  # noqa
+            if not scheduled_post.should_post(curtime):
+                continue
+
+            post = scheduled_post.get_post()
+
+            if not post:
+                await self.handle_error(FailedToGetPostError(scheduled_post))
+                continue
+
+            try:
+                await self.post_question(post)
+            except FailedScrapeError as e:
+                await self.handle_error(e)
+                await self.send(f"Removing question {scheduled_post}", Channel.BOT)
+                self.scheduled_posts.remove(scheduled_post)
+                continue
+
+            if scheduled_post.should_delete():
+                self.scheduled_posts.remove(scheduled_post)
 
     async def handle_error(self, error: Error):
         log.error(error.msg)

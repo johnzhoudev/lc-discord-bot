@@ -4,7 +4,7 @@ from typing import Optional, cast
 
 import discord
 from discord.channel import TextChannel
-from discord.ext import commands
+from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
 from src.types.command_inputs import PostCommandArgs
@@ -128,22 +128,9 @@ async def post(
 
 
 # Background task to post
-# @tasks.loop(seconds=3)
-# async def check_for_scheduled_posts():
-#     curtime = datetime.now()
+@tasks.loop(seconds=3)
+async def check_for_scheduled_posts():
+    await lc_bot.handle_check_for_scheduled_posts()
 
-#     for scheduled_post in lc_bot.scheduled_posts[
-#         :
-#     ]:  # make shallow copy so can be removed
-#         if scheduled_post.should_post(curtime) and (post := scheduled_post.get_post()):
-#             try:
-#                 await lc_bot.post_question(post)
-#             except FailedScrapeError as e:
-#                 await handle_error(e)
-#                 # TODO: Cleanup? Retry?
-#                 return
-
-#             if scheduled_post.should_delete():
-#                 lc_bot.scheduled_posts.remove(scheduled_post)
 
 bot.run(BOT_TOKEN)
