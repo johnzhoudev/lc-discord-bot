@@ -1,5 +1,11 @@
 from datetime import datetime
 
+from src.internal.posts import Scheduler
+
+
+def _format_error_text(msg: str = "An unexpected error occurred"):
+    return f"Error: {msg}"
+
 
 class Error(BaseException):
     def __init__(self, msg: str, displayed_msg: str = ""):
@@ -58,5 +64,7 @@ class InvalidNumberOfRepeatsError(Error):
         super().__init__(f"rpts must be >= -1, {rpts}", displayed_msg)
 
 
-def _format_error_text(msg: str = "An unexpected error occurred"):
-    return f"Error: {msg}"
+class FailedToGetPostError(Error):
+    def __init__(self, scheduled_post: Scheduler):
+        msg = f"Failed to get post for schedule {scheduled_post.id}"
+        super().__init__(msg)
