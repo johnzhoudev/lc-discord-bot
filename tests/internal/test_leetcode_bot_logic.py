@@ -1,10 +1,10 @@
 import pytest_mock
 import pytest
 
-from src.leetcode_bot_logic import Channel, LeetcodeBot
-import src.leetcode_bot_logic
-from src.leetcode_client import QuestionData
-from src.posts import Post
+from src.internal.leetcode_bot_logic import Channel, LeetcodeBot
+import src.internal.leetcode_bot_logic
+from src.internal.leetcode_client import QuestionData
+from src.internal.posts import Post
 
 
 @pytest.fixture(scope="function")
@@ -36,7 +36,9 @@ async def test_post_question(lc_bot, monkeypatch):
         1, "title", "content", "Easy"
     )
     monkeypatch.setattr(
-        src.leetcode_bot_logic, "get_question_text", lambda *args, **kwargs: "test_text"
+        src.internal.leetcode_bot_logic,
+        "get_question_text",
+        lambda *args, **kwargs: "test_text",
     )
     post = Post(url="test_url", desc="test_desc")
 
