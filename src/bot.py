@@ -69,7 +69,7 @@ async def on_ready():
     lc_bot.init(main_channel, bot_channel)
 
     # Start background scheduler
-    # check_for_scheduled_posts.start()
+    check_for_schedulers.start()
 
     await lc_bot.send("Hello! LC-Bot is ready!", Channel.BOT)
 
@@ -113,7 +113,7 @@ async def post(
 #         return Post("asdf", "asdf")
 
 #     should_post = DateGenerator(days, time, datetime.now())
-#     lc_bot.scheduled_posts.append(Scheduler(get_post, should_post, repeats=rpts))
+#     lc_bot.schedulers.append(Scheduler(get_post, should_post, repeats=rpts))
 
 #     await lc_bot.send(
 #         get_schedule_post_response_text("random", should_post.get_next_posting_date()),
@@ -121,16 +121,15 @@ async def post(
 #     )
 
 
-# @bot.command()
-# async def viewScheduledPosts(ctx):
-#     msg = "\n".join([f"[{idx}]\t{x}" for idx, x in enumerate(lc_bot.scheduled_posts)])
-#     await lc_bot.send(msg, Channel.BOT)
+@bot.command()
+async def viewSchedulers(ctx):
+    await lc_bot.handle_view_schedulers()
 
 
 # Background task to post
 @tasks.loop(seconds=3)
-async def check_for_scheduled_posts():
-    await lc_bot.handle_check_for_scheduled_posts()
+async def check_for_schedulers():
+    await lc_bot.handle_check_for_schedulers()
 
 
 bot.run(BOT_TOKEN)
