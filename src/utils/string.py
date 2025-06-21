@@ -5,6 +5,16 @@ log = logging.getLogger("utils")
 
 
 def parse_date_str(date_str: str):
+    """
+    Parses a string into a `datetime` object, supporting multiple common formats.
+    Parses into a single date (no repeats)
+
+    Supported formats (in order of precedence):
+        1. "HH:MM" - Interpreted as today's time (schedules for tomorrow if time has already passed today).
+        2. "YYYY-MM-DD-HH:MM" - Exact date and time.
+        3. "Mon DD, YYYY HH:MM" - Short month name format (e.g., "Jun 21, 2025 14:30").
+        4. "Month DD, YYYY HH:MM" - Full month name format (e.g., "June 21, 2025 14:30").
+    """
     now = datetime.now()
 
     try:
