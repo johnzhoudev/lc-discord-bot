@@ -3,8 +3,12 @@ from dataclasses import dataclass, field
 from datetime import datetime, time, timedelta
 from typing import Callable, ClassVar, Optional, Sequence
 
+from src.internal.leetcode_client import LeetcodeClient, QuestionData
+from src.types.errors import FailedScrapeError
+
 # Logging Setup
 log = logging.getLogger("Discord Bot, Posts")
+leetcode_client = LeetcodeClient()
 
 
 @dataclass
@@ -16,7 +20,8 @@ class Post:
     _id_counter: ClassVar[int] = 0
 
     id: int = field(init=False)  # Not passed to init
-    url: str
+
+    question_data: QuestionData
     desc: Optional[str] = None
     story: Optional[str] = None
 
@@ -40,7 +45,12 @@ class PostGenerator:
         return self.generate()
 
     def generate(self) -> Post:
-        return Post(self.url, desc=self.desc, story=self.story)
+        try:
+            question_data = leetcode_client.scrape_question(self.url)
+        except Exception:
+            raise FailedScrapeError(self.url)
+
+        return Post(question_data=question_data, desc=self.desc, story=self.story)
 
 
 class DateGenerator:
