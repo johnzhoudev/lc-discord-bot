@@ -12,6 +12,7 @@ class QuestionData:
     title: str
     desc: str
     difficulty: str
+    url: str
 
 
 class LeetcodeClient:
@@ -65,4 +66,5 @@ class LeetcodeClient:
             title_data["data"]["question"]["title"],
             content,
             title_data["data"]["question"]["difficulty"],
+            url=url,
         )

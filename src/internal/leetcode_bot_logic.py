@@ -46,14 +46,7 @@ class LeetcodeBot:
         self.log.info(f"Sent {msg} to channel {channel}")
 
     async def post_question(self, post: Post):
-        try:
-            question_data = self.leetcode_client.scrape_question(post.url)
-        except Exception:
-            raise FailedScrapeError(post.url)
-
-        await self.send(
-            get_question_text(question_data.title, post.url, post.desc), Channel.MAIN
-        )
+        await self.send(get_question_text(post), Channel.MAIN)
 
     async def handle_post_command(self, args: PostCommandArgs):
         date = None
@@ -104,7 +97,7 @@ class LeetcodeBot:
             post = scheduled_post.get_post()
 
             if not post:
-                await self.handle_error(FailedToGetPostError(scheduled_post))
+                await self.handle_error(FailedToGetPostError(scheduled_post.id))
                 continue
 
             try:
