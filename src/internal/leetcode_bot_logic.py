@@ -1,13 +1,17 @@
+import asyncio
 from datetime import datetime
 import logging
 from discord.channel import TextChannel
+from discord.ext import commands
 
+from src.internal.question_bank import get_question_bank_from_attachment
 from src.types.command_inputs import PostCommandArgs
 from src.types.errors import (
     Error,
     FailedScrapeError,
     FailedToGetPostError,
     FailedToParseDateStringError,
+    FailedToUploadQuestionBankError,
     ScheduledDateInPastError,
 )
 from src.internal.leetcode_client import LeetcodeClient
@@ -34,6 +38,10 @@ class LeetcodeBot:
     completed_questions: set[str] = set()
     log: logging.Logger = logging.getLogger("Leetcode Bot")
     leetcode_client = LeetcodeClient()
+    question_banks = {}
+
+    # For simplicity, just keep one lock and grab it for all state-changing operations
+    state_changing_lock = asyncio.Lock()
 
     def init(self, main_channel: TextChannel, bot_channel: TextChannel):
         self.channels[Channel.MAIN] = main_channel
@@ -53,7 +61,8 @@ class LeetcodeBot:
         if args.date_str:
             try:
                 date = parse_date_str(args.date_str)
-            except Exception:
+            except Exception as e:
+                log.exception(e)
                 await self.handle_error(FailedToParseDateStringError(args.date_str))
                 return
 
@@ -64,12 +73,14 @@ class LeetcodeBot:
             def should_post(curtime):
                 return curtime > date
 
-            self.schedulers.append(
-                Scheduler(
-                    PostGenerator(args.url, desc=args.desc, story=args.story),
-                    should_post,
+            async with self.state_changing_lock:
+                self.schedulers.append(
+                    Scheduler(
+                        PostGenerator(args.url, desc=args.desc, story=args.story),
+                        should_post,
+                    )
                 )
-            )
+
             await self.send(
                 get_schedule_post_response_text(args.url, date), Channel.BOT
             )
@@ -77,6 +88,29 @@ class LeetcodeBot:
             # Immediately post question
             post = PostGenerator(**args.model_dump(exclude_none=True))()
             await self.post_question(post)
+
+    async def handle_upload_question_bank(self, ctx: commands.Context):
+        question_file = ctx.message.attachments[0]
+
+        try:
+            question_bank = get_question_bank_from_attachment(question_file)
+        except Exception as e:
+            log.exception(e)
+            await self.handle_error(FailedToUploadQuestionBankError())
+            return
+
+        async with self.state_changing_lock:
+            question_bank_exists = question_bank.filename in self.question_banks
+            self.question_banks[question_bank.filename] = question_bank
+
+        if question_bank_exists:
+            msg = f"Successfully uploaded and replaced question bank with ID: {question_bank.filename}"
+        else:
+            msg = (
+                f"Successfully uploaded question bank with ID: {question_bank.filename}"
+            )
+
+        await self.send(msg, Channel.BOT)
 
     async def handle_view_schedulers(self):
         text = (
@@ -86,6 +120,8 @@ class LeetcodeBot:
         await self.send(text, Channel.BOT)
 
     async def handle_check_for_schedulers(self):
+        # TODO: Make this async safe!
+
         curtime = datetime.now()
 
         # Make shallow copy so can be reused
