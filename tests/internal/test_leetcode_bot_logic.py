@@ -121,41 +121,36 @@ async def test_handle_post_command_valid_future_schedule(
     assert "story" in question_text
 
 
-# # @pytest.mark.asyncio
-# # async def test_handle_post_command_date_in_past(lc_bot, mocker):
-# #     past_date = (datetime.now() - timedelta(minutes=10)).strftime("%H:%M")
-# #     args = PostCommandArgs(
-# #         url="https://example.com",
-# #         date_str=past_date,
-# #         desc="desc",
-# #         story="story"
-# #     )
+@pytest.mark.asyncio
+async def test_handle_post_command_date_in_past(lc_bot, mocker):
+    curr_date = datetime(2025, 6, 26, 9)
+    test_url = "https://leetcode.com/problems/minimum-moves-to-equal-array-elements-ii/description/"
+    MockDateTime.init(curr_date)
 
-# #     lc_bot.handle_error = mocker.AsyncMock()
+    args = PostCommandArgs(
+        url=test_url, date_str="2025-05-26-09:00", desc="desc", story="story"
+    )
+    await lc_bot.handle_post_command(args)
 
-# #     await lc_bot.handle_post_command(args)
+    args, kwargs = lc_bot.channels[Channel.BOT].send.call_args
+    error_text = args[0]
+    assert (
+        "Scheduled time 2025-05-26 09:00 is in the past. Please provide a time in the future."
+        in error_text
+    )
 
-# #     lc_bot.handle_error.assert_awaited_once()
-# #     error = lc_bot.handle_error.call_args[0][0]
-# #     assert isinstance(error, ScheduledDateInPastError)
 
-# #     assert lc_bot.schedulers == []
+@pytest.mark.asyncio
+async def test_handle_post_command_invalid_date_str(lc_bot, mocker):
+    curr_date = datetime(2025, 6, 26, 9)
+    test_url = "https://leetcode.com/problems/minimum-moves-to-equal-array-elements-ii/description/"
+    MockDateTime.init(curr_date)
 
-# # @pytest.mark.asyncio
-# # async def test_handle_post_command_invalid_date_str(lc_bot, mocker):
-# #     args = PostCommandArgs(
-# #         url="https://example.com",
-# #         date_str="not-a-date",
-# #         desc="desc",
-# #         story="story"
-# #     )
+    args = PostCommandArgs(
+        url=test_url, date_str="invalid date", desc="desc", story="story"
+    )
+    await lc_bot.handle_post_command(args)
 
-# #     lc_bot.handle_error = mocker.AsyncMock()
-
-# #     await lc_bot.handle_post_command(args)
-
-# #     lc_bot.handle_error.assert_awaited_once()
-# #     error = lc_bot.handle_error.call_args[0][0]
-# #     assert isinstance(error, FailedToParseDateStringError)
-
-# #     assert lc_bot.schedulers == []
+    args, kwargs = lc_bot.channels[Channel.BOT].send.call_args
+    error_text = args[0]
+    assert "Failed to parse date str" in error_text
