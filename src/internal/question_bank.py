@@ -7,6 +7,7 @@ import csv
 from io import StringIO
 
 from src.utils.discord import get_file
+from src.utils.validators import is_url
 
 log = logging.getLogger("internal/question_bank.py")
 
@@ -50,6 +51,8 @@ def get_question_bank_from_attachment(question_file: Attachment) -> QuestionBank
 
     for args in csv_data:
         url = args[0]
+        if not is_url(url):
+            raise ValueError("Url is not valid!")
         posted = False if len(args) == 1 else bool(args[1])
         questions.append(Question(url=url, posted=posted))
 
