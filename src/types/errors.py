@@ -72,3 +72,8 @@ class FailedToUploadQuestionBankError(Error):
     def __init__(self):
         displayed_msg = "Failed to upload question bank, please make sure question bank file is in csv format with line structure url<,optional completed?>"
         super().__init__("Failed to upload question bank", displayed_msg=displayed_msg)
+
+
+class QuestionBankDoesNotExistError(Error):
+    def __init__(self, name: str):
+        super().__init__(f"Question bank {name} does not exist.")

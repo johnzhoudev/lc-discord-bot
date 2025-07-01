@@ -99,6 +99,11 @@ async def listQuestionBanks(ctx: commands.Context):
 
 
 @bot.command()
+async def getQuestionBank(ctx: commands.Context, question_bank_name: str):
+    await lc_bot.handle_get_question_bank(question_bank_name)
+
+
+@bot.command()
 async def viewSchedulers(ctx):
     await lc_bot.handle_view_schedulers()
 

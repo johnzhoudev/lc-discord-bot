@@ -1,11 +1,13 @@
 import asyncio
 from dataclasses import dataclass
-from typing import List
+import os
+from typing import Iterable, List
 from discord import Attachment
 import logging
 import csv
 from io import StringIO
 
+from src.constants.config import QUESTION_BANK_DIR
 from src.utils.discord import get_file
 from src.utils.validators import is_url
 
@@ -24,6 +26,21 @@ class Question:
 class QuestionBank:
     filename: str
     questions: List[Question]
+
+    def convert_to_file(self) -> str:  # Returns path to file
+        # Write to /data/question_banks/
+        rows = [[q.url, q.posted] for q in self.questions]
+
+        # Create directories if they don't exist
+        os.makedirs(QUESTION_BANK_DIR, exist_ok=True)
+
+        with open(
+            QUESTION_BANK_DIR + self.filename, mode="w", encoding="utf-8"
+        ) as file:
+            writer = csv.writer(file, delimiter=",", lineterminator="\n")
+            writer.writerows(rows)
+
+        return QUESTION_BANK_DIR + self.filename
 
 
 def get_question_bank_from_attachment(question_file: Attachment) -> QuestionBank:
@@ -45,6 +62,10 @@ def get_question_bank_from_attachment(question_file: Attachment) -> QuestionBank
         string_content = raw_file.decode(encoding="utf-16")
 
     file = StringIO(string_content)
+    return csv_to_question_bank(question_file.filename, file)
+
+
+def csv_to_question_bank(filename: str, file: Iterable[str]):
     csv_data = csv.reader(file, delimiter=",")
 
     questions = []
@@ -56,4 +77,4 @@ def get_question_bank_from_attachment(question_file: Attachment) -> QuestionBank
         posted = False if len(args) == 1 else bool(args[1])
         questions.append(Question(url=url, posted=posted))
 
-    return QuestionBank(filename=question_file.filename, questions=questions)
+    return QuestionBank(filename=filename, questions=questions)

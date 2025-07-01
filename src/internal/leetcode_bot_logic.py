@@ -1,10 +1,17 @@
 import asyncio
 from datetime import datetime
 import logging
+import os
 from discord.channel import TextChannel
 from discord.ext import commands
+from discord import File
 
-from src.internal.question_bank import get_question_bank_from_attachment
+from src.constants.config import QUESTION_BANK_DIR
+from src.internal.question_bank import (
+    QuestionBank,
+    csv_to_question_bank,
+    get_question_bank_from_attachment,
+)
 from src.types.command_inputs import PostCommandArgs
 from src.types.errors import (
     Error,
@@ -12,6 +19,7 @@ from src.types.errors import (
     FailedToGetPostError,
     FailedToParseDateStringError,
     FailedToUploadQuestionBankError,
+    QuestionBankDoesNotExistError,
     ScheduledDateInPastError,
 )
 from src.internal.leetcode_client import LeetcodeClient
@@ -42,7 +50,7 @@ class LeetcodeBot:
     completed_questions: set[str] = set()
     log: logging.Logger = logging.getLogger("Leetcode Bot")
     leetcode_client = LeetcodeClient()
-    question_banks = {}
+    question_banks: Dict[str, QuestionBank] = {}
 
     # For simplicity, just keep one lock and grab it for all state-changing operations
     state_lock = asyncio.Lock()
@@ -51,10 +59,18 @@ class LeetcodeBot:
         self.channels[Channel.MAIN] = main_channel
         self.channels[Channel.BOT] = bot_channel
 
+        self._load_question_banks()
+
         self.log.info("Successfully initialized LeetcodeBot")
 
-    async def send(self, msg: str, channel: Channel):
-        await self.channels[channel].send(msg)
+    async def send(
+        self, msg: str, channel: Channel, file_attachment: Optional[str] = None
+    ):
+        if file_attachment:
+            file = File(open(file_attachment, "rb"))
+            await self.channels[channel].send(msg, file=file)
+        else:
+            await self.channels[channel].send(msg)
         self.log.info(f"Sent {msg} to channel {channel}")
 
     async def post_question(self, post: Post):
@@ -123,6 +139,24 @@ class LeetcodeBot:
 
         await self.send(msg, Channel.BOT)
 
+    async def handle_get_question_bank(self, question_bank_name: str):
+        async with self.state_lock:
+            if question_bank_name not in self.question_banks:
+                available_question_banks = get_formatted_question_bank_list(
+                    list(self.question_banks.keys())
+                )
+                await self.handle_error(
+                    QuestionBankDoesNotExistError(question_bank_name),
+                    additional_messages=available_question_banks,
+                )
+                return
+
+            file_path = self.question_banks[question_bank_name].convert_to_file()
+
+        await self.send(
+            f"{question_bank_name}:", Channel.BOT, file_attachment=file_path
+        )
+
     async def handle_list_question_banks(self):
         async with self.state_lock:
             question_bank_names = list(self.question_banks.keys())
@@ -167,9 +201,26 @@ class LeetcodeBot:
     async def handle_error(
         self, error: Error, additional_messages: Optional[str] = None
     ):
+        # WARNING: DO NOT ACQURIE STATE LOCK HERE!
         log.error(error.msg)
         log.info(additional_messages)
         displayed_msg = error.displayed_msg + (
             f"\n{additional_messages}" if additional_messages else ""
         )
         await self.send(displayed_msg, Channel.BOT)
+
+    def _load_question_banks(self):
+        # Load question banks from file
+        log.info(f"Loading question banks from {QUESTION_BANK_DIR}...")
+        # Create directories if they don't exist
+        os.makedirs(QUESTION_BANK_DIR, exist_ok=True)
+
+        question_banks = os.listdir(QUESTION_BANK_DIR)
+        log.info(f"Question banks: {question_banks}")
+
+        for bank in question_banks:
+            log.info(f"Loading {QUESTION_BANK_DIR + bank}")
+            formatted_question_bank = csv_to_question_bank(
+                bank, open(QUESTION_BANK_DIR + bank, "r")
+            )
+            self.question_banks[bank] = formatted_question_bank
