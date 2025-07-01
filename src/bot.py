@@ -94,6 +94,11 @@ async def uploadQuestionBank(ctx: commands.Context):
 
 
 @bot.command()
+async def listQuestionBanks(ctx: commands.Context):
+    await lc_bot.handle_list_question_banks()
+
+
+@bot.command()
 async def viewSchedulers(ctx):
     await lc_bot.handle_view_schedulers()
 

@@ -20,7 +20,11 @@ from enum import Enum
 from typing import Dict, Optional
 
 from src.utils.string import parse_date_str
-from src.utils.text import get_question_text, get_schedule_post_response_text
+from src.utils.text import (
+    get_formatted_question_bank_list,
+    get_question_text,
+    get_schedule_post_response_text,
+)
 
 
 class Channel(Enum):
@@ -41,7 +45,7 @@ class LeetcodeBot:
     question_banks = {}
 
     # For simplicity, just keep one lock and grab it for all state-changing operations
-    state_changing_lock = asyncio.Lock()
+    state_lock = asyncio.Lock()
 
     def init(self, main_channel: TextChannel, bot_channel: TextChannel):
         self.channels[Channel.MAIN] = main_channel
@@ -73,7 +77,7 @@ class LeetcodeBot:
             def should_post(curtime):
                 return curtime > date
 
-            async with self.state_changing_lock:
+            async with self.state_lock:
                 self.schedulers.append(
                     Scheduler(
                         PostGenerator(args.url, desc=args.desc, story=args.story),
@@ -94,12 +98,19 @@ class LeetcodeBot:
 
         try:
             question_bank = get_question_bank_from_attachment(question_file)
+            log.info(question_bank)
+        except ValueError as e:
+            log.exception(e)
+            await self.handle_error(
+                FailedToUploadQuestionBankError(), additional_messages=str(e)
+            )
+            return
         except Exception as e:
             log.exception(e)
             await self.handle_error(FailedToUploadQuestionBankError())
             return
 
-        async with self.state_changing_lock:
+        async with self.state_lock:
             question_bank_exists = question_bank.filename in self.question_banks
             self.question_banks[question_bank.filename] = question_bank
 
@@ -110,6 +121,13 @@ class LeetcodeBot:
                 f"Successfully uploaded question bank with ID: {question_bank.filename}"
             )
 
+        await self.send(msg, Channel.BOT)
+
+    async def handle_list_question_banks(self):
+        async with self.state_lock:
+            question_bank_names = list(self.question_banks.keys())
+
+        msg = get_formatted_question_bank_list(question_bank_names)
         await self.send(msg, Channel.BOT)
 
     async def handle_view_schedulers(self):
