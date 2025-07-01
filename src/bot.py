@@ -88,37 +88,9 @@ async def post(
     await lc_bot.handle_post_command(args)
 
 
-# @bot.command()
-# async def scheduleRandom(ctx, time_str: str, days_str: str, rpts: int = -1):
-#     log.info(f"{time_str}, {days_str}, {rpts}")
-
-#     try:
-#         time = parse_time_str(time_str)
-#     except ValueError:
-#         await handle_error(FailedToParseTimeStringError(time_str))
-#         return
-
-#     try:
-#         days = parse_days(days_str)
-#     except ValueError:
-#         await handle_error(FailedToParseDaysStringError(days_str))
-#         return
-
-#     if not rpts >= -1:
-#         await handle_error(InvalidNumberOfRepeatsError(rpts))
-#         return
-
-#     # TODO: Fix get random post
-#     def get_post():
-#         return Post("asdf", "asdf")
-
-#     should_post = DateGenerator(days, time, datetime.now())
-#     lc_bot.schedulers.append(Scheduler(get_post, should_post, repeats=rpts))
-
-#     await lc_bot.send(
-#         get_schedule_post_response_text("random", should_post.get_next_posting_date()),
-#         Channel.BOT,
-#     )
+@bot.command()
+async def uploadQuestionBank(ctx: commands.Context):
+    await lc_bot.handle_upload_question_bank(ctx)
 
 
 @bot.command()
