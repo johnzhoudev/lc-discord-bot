@@ -7,6 +7,7 @@ import logging
 import csv
 from io import StringIO
 import random
+from datetime import datetime
 
 from src.constants.config import QUESTION_BANK_DIR
 from src.types.errors import NoMoreQuestionsInQuestionBankError
@@ -28,6 +29,7 @@ class Question:
 class QuestionBank:
     filename: str
     questions: List[Question]
+    last_updated_time: datetime  # Convert to file, and re-uploaded
 
     def get_random_question(self) -> str:  # Returns file URL
         valid_questions = [
@@ -54,6 +56,8 @@ class QuestionBank:
         ) as file:
             writer = csv.writer(file, delimiter=",", lineterminator="\n")
             writer.writerows(rows)
+
+        self.last_updated_time = datetime.now()
 
         return QUESTION_BANK_DIR + self.filename
 
@@ -92,4 +96,6 @@ def csv_to_question_bank(filename: str, file: Iterable[str]):
         posted = False if len(args) == 1 else bool(args[1])
         questions.append(Question(url=url, posted=posted))
 
-    return QuestionBank(filename=filename, questions=questions)
+    return QuestionBank(
+        filename=filename, questions=questions, last_updated_time=datetime.now()
+    )

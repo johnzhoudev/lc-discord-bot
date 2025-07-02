@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List
 
 from src.internal.posts import Post
+from src.internal.question_bank import QuestionBank
 
 
 def get_question_text(post: Post):
@@ -28,8 +29,12 @@ def get_schedule_post_response_text(url: str, date: datetime):
     return f"Added question: {url} to be posted at {date.strftime('%Y-%m-%d %H:%M')}"
 
 
-def get_formatted_question_bank_list(banks: List[str]):
+def get_formatted_question_bank_list(banks: List[QuestionBank]):
     if len(banks) == 0:
         return "No question banks to display."
-    msg = "Question banks:\n" + ("\n-".join(banks))
+    bank_lines = [
+        f"- {bank.filename} last updated {datetime.strftime(bank.last_updated_time, '%Y-%m-%d %H:%M:%S')}"
+        for bank in banks
+    ]
+    msg = "Question banks:\n" + ("\n-".join(bank_lines))
     return msg

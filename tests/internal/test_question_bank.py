@@ -1,6 +1,7 @@
 import pytest_mock
 from src.internal.question_bank import Question, QuestionBank
 import src.internal.question_bank
+from datetime import datetime
 
 
 def test_question_bank_random_choice(mocker: pytest_mock.MockerFixture, monkeypatch):
@@ -9,7 +10,7 @@ def test_question_bank_random_choice(mocker: pytest_mock.MockerFixture, monkeypa
     monkeypatch.setattr(src.internal.question_bank, "random", mock_random)
 
     questions = [Question("q1", False), Question("q2", False), Question("q3", False)]
-    bank = QuestionBank("test_file", questions)
+    bank = QuestionBank("test_file", questions, datetime.now())
 
     q = bank.get_random_question()
     assert q == "q2"
