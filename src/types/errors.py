@@ -77,3 +77,8 @@ class FailedToUploadQuestionBankError(Error):
 class QuestionBankDoesNotExistError(Error):
     def __init__(self, name: str):
         super().__init__(f"Question bank {name} does not exist.")
+
+
+class NoMoreQuestionsInQuestionBankError(Error):
+    def __init__(self, bank_name: str):
+        super().__init__(f"Question bank {bank_name} has no more questions!")
