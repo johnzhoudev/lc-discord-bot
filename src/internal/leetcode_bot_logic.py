@@ -182,7 +182,7 @@ class LeetcodeBot:
 
     async def handle_list_question_banks(self):
         async with self.state_lock:
-            question_bank_names = list(self.question_banks.keys())
+            question_bank_names = list(self.question_banks.values())
 
         msg = get_formatted_question_bank_list(question_bank_names)
         await self.send(msg, Channel.BOT)
@@ -252,7 +252,7 @@ class LeetcodeBot:
         # STATE LOCK MUST BE ACQUIRED ALREADY
         if question_bank_name not in self.question_banks:
             available_question_banks = get_formatted_question_bank_list(
-                list(self.question_banks.keys())
+                list(self.question_banks.values())
             )
             await self.handle_error(
                 QuestionBankDoesNotExistError(question_bank_name),
