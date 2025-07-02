@@ -34,23 +34,34 @@ class PostGenerator:
     # TODO: Add question banks
     # TODO: Add story generation
     # TODO: Add hint generation
+
     def __init__(
-        self, url: str, desc: Optional[str] = None, story: Optional[str] = None
+        self,
+        get_url_func: Callable[[], str],
+        desc: Optional[str] = None,
+        get_story_func: Callable[[], str | None] = lambda: None,
     ):
-        self.url = url
+        """
+        Only 1 of url or question bank can be specified
+        """
+        self.get_url_func = get_url_func
         self.desc = desc
-        self.story = story
+        self.get_story_func = get_story_func
 
     def __call__(self) -> Post:
         return self.generate()
 
     def generate(self) -> Post:
+        url = self.get_url_func()
+        log.info(f"Got url {url}")
         try:
-            question_data = leetcode_client.scrape_question(self.url)
+            question_data = leetcode_client.scrape_question(url)
         except Exception:
-            raise FailedScrapeError(self.url)
+            raise FailedScrapeError(url)
 
-        return Post(question_data=question_data, desc=self.desc, story=self.story)
+        return Post(
+            question_data=question_data, desc=self.desc, story=self.get_story_func()
+        )
 
 
 class DateGenerator:

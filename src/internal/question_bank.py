@@ -6,8 +6,10 @@ from discord import Attachment
 import logging
 import csv
 from io import StringIO
+import random
 
 from src.constants.config import QUESTION_BANK_DIR
+from src.types.errors import NoMoreQuestionsInQuestionBankError
 from src.utils.discord import get_file
 from src.utils.validators import is_url
 
@@ -26,6 +28,19 @@ class Question:
 class QuestionBank:
     filename: str
     questions: List[Question]
+
+    def get_random_question(self) -> str:  # Returns file URL
+        valid_questions = [
+            question for question in self.questions if not question.posted
+        ]
+
+        if len(valid_questions) == 0:
+            raise NoMoreQuestionsInQuestionBankError(self.filename)
+
+        i = random.randrange(len(valid_questions))
+        question = valid_questions[i]
+        question.posted = True
+        return question.url
 
     def convert_to_file(self) -> str:  # Returns path to file
         # Write to /data/question_banks/

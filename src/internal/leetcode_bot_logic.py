@@ -95,7 +95,11 @@ class LeetcodeBot:
             async with self.state_lock:
                 self.schedulers.append(
                     Scheduler(
-                        PostGenerator(args.url, desc=args.desc, story=args.story),
+                        PostGenerator(
+                            lambda: args.url,
+                            desc=args.desc,
+                            get_story_func=lambda: args.story,
+                        ),
                         should_post,
                     )
                 )
@@ -105,7 +109,19 @@ class LeetcodeBot:
             )
         else:
             # Immediately post question
-            post = PostGenerator(**args.model_dump(exclude_none=True))()
+
+            # TESTING: Use question bank
+            # question_bank = self.question_banks[args.url]
+            # try:
+            #     post = PostGenerator(lambda: question_bank.get_random_question(), desc=args.desc, get_story_func=lambda: args.story)()
+            # except Error as e:
+            #     log.exception(e)
+            #     await self.handle_error(e)
+            #     return
+
+            post = PostGenerator(
+                lambda: args.url, desc=args.desc, get_story_func=lambda: args.story
+            )()
             await self.post_question(post)
 
     async def handle_upload_question_bank(self, ctx: commands.Context):
