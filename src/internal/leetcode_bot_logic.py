@@ -48,7 +48,6 @@ class LeetcodeBot:
     schedulers: list[Scheduler] = []
     uncompleted_questions: set[str] = set()
     completed_questions: set[str] = set()
-    log: logging.Logger = logging.getLogger("Leetcode Bot")
     leetcode_client = LeetcodeClient()
     question_banks: Dict[str, QuestionBank] = {}
 
@@ -61,7 +60,7 @@ class LeetcodeBot:
 
         self._load_question_banks()
 
-        self.log.info("Successfully initialized LeetcodeBot")
+        log.info("Successfully initialized LeetcodeBot")
 
     async def send(
         self, msg: str, channel: Channel, file_attachment: Optional[str] = None
@@ -71,7 +70,7 @@ class LeetcodeBot:
             await self.channels[channel].send(msg, file=file)
         else:
             await self.channels[channel].send(msg)
-        self.log.info(f"Sent {msg} to channel {channel}")
+        log.info(f"Sent {msg} to channel {channel}")
 
     async def post_question(self, post: Post):
         await self.send(get_question_text(post), Channel.MAIN)
@@ -141,14 +140,7 @@ class LeetcodeBot:
 
     async def handle_get_question_bank(self, question_bank_name: str):
         async with self.state_lock:
-            if question_bank_name not in self.question_banks:
-                available_question_banks = get_formatted_question_bank_list(
-                    list(self.question_banks.keys())
-                )
-                await self.handle_error(
-                    QuestionBankDoesNotExistError(question_bank_name),
-                    additional_messages=available_question_banks,
-                )
+            if not await self._check_question_bank_exists(question_bank_name):
                 return
 
             file_path = self.question_banks[question_bank_name].convert_to_file()
@@ -156,6 +148,21 @@ class LeetcodeBot:
         await self.send(
             f"{question_bank_name}:", Channel.BOT, file_attachment=file_path
         )
+
+    async def handle_delete_question_bank(self, question_bank_name: str):
+        async with self.state_lock:
+            if not await self._check_question_bank_exists(question_bank_name):
+                return
+
+            try:
+                os.remove(QUESTION_BANK_DIR + question_bank_name)
+            except FileNotFoundError:
+                log.warning(f"Tried to delete, File not found for {question_bank_name}")
+                pass
+
+            del self.question_banks[question_bank_name]
+
+        await self.send(f"{question_bank_name} deleted!", Channel.BOT)
 
     async def handle_list_question_banks(self):
         async with self.state_lock:
@@ -224,3 +231,17 @@ class LeetcodeBot:
                 bank, open(QUESTION_BANK_DIR + bank, "r")
             )
             self.question_banks[bank] = formatted_question_bank
+
+    async def _check_question_bank_exists(self, question_bank_name):
+        # STATE LOCK MUST BE ACQUIRED ALREADY
+        if question_bank_name not in self.question_banks:
+            available_question_banks = get_formatted_question_bank_list(
+                list(self.question_banks.keys())
+            )
+            await self.handle_error(
+                QuestionBankDoesNotExistError(question_bank_name),
+                additional_messages=available_question_banks,
+            )
+            return False
+
+        return True
