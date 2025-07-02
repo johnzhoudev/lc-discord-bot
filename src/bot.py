@@ -104,6 +104,11 @@ async def getQuestionBank(ctx: commands.Context, question_bank_name: str):
 
 
 @bot.command()
+async def deleteQuestionBank(ctx: commands.Context, question_bank_name: str):
+    await lc_bot.handle_delete_question_bank(question_bank_name)
+
+
+@bot.command()
 async def viewSchedulers(ctx):
     await lc_bot.handle_view_schedulers()
 
