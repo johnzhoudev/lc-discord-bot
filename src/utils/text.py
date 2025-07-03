@@ -19,9 +19,7 @@ def get_question_text(post: Post):
 @everyone Leetcode of the day! **{post.question_data.title}**
 
 {post.question_data.url}
-
-{post.desc or ""}
-
+{("\n" + post.desc + "\n") if post.desc else ""}
 React with :white_check_mark:  if you do it. Also rank personal enjoyment of the problem with :fire:/ :kissing_heart:  or :neutral_face:  or :face_vomiting: or :head_bandage: (messed me up a bit) or :clown: (kinda jokes) or :tropical_drink: (relaxing like ur on vaca). :thought_balloon: (did it in my head)
     """
 
