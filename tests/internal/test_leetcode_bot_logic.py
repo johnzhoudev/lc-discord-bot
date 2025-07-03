@@ -91,6 +91,28 @@ async def test_handle_post_command_immediate_post(
 
 
 @pytest.mark.asyncio
+async def test_handle_post_command_none_rendered_correctly(
+    lc_bot, posts_lc_client, mocker: pytest_mock.MockerFixture, monkeypatch
+):
+    test_url = "https://leetcode.com/problems/minimum-moves-to-equal-array-elements-ii/description/"
+    test_title = "Min moves to equal array"
+
+    posts_lc_client.scrape_question.return_value = QuestionData(
+        123, test_title, "desc", "Easy", test_url
+    )
+
+    args = PostCommandArgs(url=test_url, date_str="x", desc=None, story=None)
+
+    await lc_bot.handle_post_command(args)
+
+    args, kwargs = lc_bot.channels[Channel.MAIN].send.call_args
+    text = args[0]
+    assert "None" not in text
+    assert test_url in text
+    assert test_title in text
+
+
+@pytest.mark.asyncio
 async def test_handle_post_command_valid_future_schedule(
     lc_bot, posts_lc_client, mocker: pytest_mock.MockerFixture
 ):
