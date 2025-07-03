@@ -3,6 +3,7 @@ from typing import List
 
 from src.internal.posts import Post
 from src.internal.question_bank import QuestionBank
+import pytz
 
 
 def get_question_text(post: Post):
@@ -30,10 +31,11 @@ def get_schedule_post_response_text(url: str, date: datetime):
 
 
 def get_formatted_question_bank_list(banks: List[QuestionBank]):
+    eastern_time = pytz.timezone("America/New_York")
     if len(banks) == 0:
         return "No question banks to display."
     bank_lines = [
-        f"- {bank.filename} last updated {datetime.strftime(bank.last_updated_time, '%Y-%m-%d %H:%M:%S')}"
+        f"- {bank.filename} last updated {datetime.strftime(bank.last_updated_time.astimezone(eastern_time), '%Y-%m-%d %H:%M:%S')}"
         for bank in banks
     ]
     msg = "Question banks:\n" + ("\n-".join(bank_lines))
