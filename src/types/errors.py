@@ -82,3 +82,8 @@ class QuestionBankDoesNotExistError(Error):
 class NoMoreQuestionsInQuestionBankError(Error):
     def __init__(self, bank_name: str):
         super().__init__(f"Question bank {bank_name} has no more questions!")
+
+
+class UnexpectedError(Error):
+    def __init__(self):
+        super().__init__("An unexpected error occurred.")
