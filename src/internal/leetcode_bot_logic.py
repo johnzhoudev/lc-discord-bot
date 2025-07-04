@@ -18,6 +18,8 @@ from src.types.errors import (
     FailedScrapeError,
     FailedToGetPostError,
     FailedToParseDateStringError,
+    FailedToParseDaysStringError,
+    FailedToParseTimeStringError,
     FailedToUploadQuestionBankError,
     QuestionBankDoesNotExistError,
     ScheduledDateInPastError,
@@ -27,7 +29,7 @@ from src.internal.posts import Post, PostGenerator, Scheduler
 from enum import Enum
 from typing import Dict, Optional
 
-from src.utils.string import parse_date_str
+from src.utils.string import parse_date_str, parse_days, parse_time_str
 from src.utils.text import (
     get_formatted_question_bank_list,
     get_question_text,
@@ -220,6 +222,26 @@ class LeetcodeBot:
 
             if scheduled_post.should_delete():
                 self.schedulers.remove(scheduled_post)
+    
+    async def handle_campaign(self, time_str: str, days_str: str):
+        # parse time and day
+        try:
+            time = parse_time_str(time_str)
+        except ValueError as e:
+            await self.handle_error(FailedToParseTimeStringError(time_str))
+            return
+        
+        try:
+            days = parse_days(days_str)
+        except ValueError as e:
+            await self.handle_error(FailedToParseDaysStringError(days_str))
+            return
+        
+        
+        
+        await self.send(str(time), Channel.BOT)
+        await self.send(str(days), Channel.BOT)
+
 
     async def handle_error(
         self, error: Error, additional_messages: Optional[str] = None

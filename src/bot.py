@@ -146,14 +146,14 @@ async def viewSchedulers(ctx):
         await lc_bot.handle_error(UnexpectedError())
 
 
-# @bot.command()
-# @handle_unexpected_exceptions
-# async def campaign(ctx: commands.Context, time_schedule: str, day_schedule: str):
-#     try:
-#         await lc_bot.handle_
-#     except Exception as e:
-#         log.exception(f"An unexpected error occurred: {e}")
-#         await lc_bot.handle_error(UnexpectedError())
+@bot.command()
+@handle_unexpected_exceptions
+async def campaign(ctx: commands.Context, time_str: str, days_str: str):
+    try:
+        await lc_bot.handle_campaign(time_str, days_str)
+    except Exception as e:
+        log.exception(f"An unexpected error occurred: {e}")
+        await lc_bot.handle_error(UnexpectedError())
 
 
 # Background task to post
