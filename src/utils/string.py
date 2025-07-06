@@ -1,5 +1,6 @@
 from datetime import datetime, time, timedelta
 import logging
+from typing import Sequence
 
 log = logging.getLogger("utils")
 
@@ -52,7 +53,10 @@ def parse_time_str(time_str: str) -> time:
     return datetime.strptime(time_str, "%H:%M").time()
 
 
-def parse_days(days_str: str):
+def parse_days(days_str: str) -> Sequence[int]:
+    """
+    Outputs list of days, idx
+    """
     days_str = days_str.lower()
     if days_str == "daily":
         return range(7)
