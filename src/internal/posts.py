@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, time, timedelta
-from typing import Callable, ClassVar, Optional, Sequence
+from datetime import datetime
+from typing import Callable, ClassVar, Optional
 
 from src.internal.leetcode_client import LeetcodeClient, QuestionData
 from src.types.errors import FailedScrapeError
@@ -64,49 +64,6 @@ class PostGenerator:
         )
 
 
-class DateGenerator:
-    # days is list of ints representing days to post - 0 = Monday ... 6 = Sunday
-    def __init__(self, days: Sequence[int], time: time, called_date: datetime):
-        self.day_gen = self.__create_day_generator(days)
-        self.time = time
-        self.next_date = called_date.replace(
-            hour=time.hour, minute=time.minute, second=0, microsecond=0
-        )
-
-        # adjust day
-        while self.next_date < called_date or self.next_date.weekday() not in days:
-            self.next_date = self.next_date + timedelta(days=1)
-
-        while next(self.day_gen) != self.next_date.weekday():
-            pass  # advances self.day_gen to match
-
-    def __create_day_generator(self, days: Sequence[int]):
-        i = 0
-        while True:
-            yield days[i]
-            i = (i + 1) % len(days)
-
-    def __get_days_to_advance(self, curr_day: int, target_day: int):
-        return (target_day - curr_day) % 7
-
-    def get_next_posting_date(self):
-        return self.next_date
-
-    # Returns True if should post, else false
-    def __call__(self, curtime: datetime) -> bool:
-        if curtime < self.next_date:  # Not time yet
-            return False
-
-        # set next date
-        self.next_date = self.next_date + timedelta(
-            days=self.__get_days_to_advance(
-                self.next_date.weekday(), next(self.day_gen)
-            )
-        )
-        log.info(f"Set next date of date generator to {self.next_date}")
-        return True
-
-
 class Scheduler:
     """
     Class to use in practice. Sets up internal get_post function and scheduler.
@@ -127,8 +84,10 @@ class Scheduler:
         should_post_func: Callable[[datetime], bool],
         repeats: int = 1,
     ):
-        self.id = type(self)._id_counter  # Use type(self) to support inheritance
-        type(self)._id_counter += 1
+        self.id = (
+            Scheduler._id_counter
+        )  # One global counter for all Schedulers (even inherited)
+        Scheduler._id_counter += 1
 
         self.__get_post_func = get_post_func
         self.__should_post_func = should_post_func
