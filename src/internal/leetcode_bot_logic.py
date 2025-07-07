@@ -1,25 +1,21 @@
 import asyncio
 from datetime import datetime
 import logging
-import os
 from discord.channel import TextChannel
 from discord.ext import commands
 from discord import File
 
-from src.constants.config import QUESTION_BANK_DIR
-from src.internal.question_bank import (
-    QuestionBank,
-    csv_to_question_bank,
-    get_question_bank_from_attachment,
-)
+from src.internal.campaigns import Campaign
+from src.internal.date_generator import DateGenerator
+from src.internal.question_bank_manager import QuestionBankManager
 from src.types.command_inputs import PostCommandArgs
 from src.types.errors import (
     Error,
     FailedScrapeError,
     FailedToGetPostError,
     FailedToParseDateStringError,
-    FailedToUploadQuestionBankError,
-    QuestionBankDoesNotExistError,
+    FailedToParseDaysStringError,
+    FailedToParseTimeStringError,
     ScheduledDateInPastError,
 )
 from src.internal.leetcode_client import LeetcodeClient
@@ -27,9 +23,8 @@ from src.internal.posts import Post, PostGenerator, Scheduler
 from enum import Enum
 from typing import Dict, Optional
 
-from src.utils.string import parse_date_str
+from src.utils.string import parse_date_str, parse_days, parse_time_str
 from src.utils.text import (
-    get_formatted_question_bank_list,
     get_question_text,
     get_schedule_post_response_text,
 )
@@ -49,16 +44,16 @@ class LeetcodeBot:
     uncompleted_questions: set[str] = set()
     completed_questions: set[str] = set()
     leetcode_client = LeetcodeClient()
-    question_banks: Dict[str, QuestionBank] = {}
+    question_bank_manager = QuestionBankManager()
 
     # For simplicity, just keep one lock and grab it for all state-changing operations
     state_lock = asyncio.Lock()
 
-    def init(self, main_channel: TextChannel, bot_channel: TextChannel):
+    async def init(self, main_channel: TextChannel, bot_channel: TextChannel):
         self.channels[Channel.MAIN] = main_channel
         self.channels[Channel.BOT] = bot_channel
 
-        self._load_question_banks()
+        await self.question_bank_manager.load_question_banks()
 
         log.info("Successfully initialized LeetcodeBot")
 
@@ -113,7 +108,7 @@ class LeetcodeBot:
             # TESTING: Use question bank
             # question_bank = self.question_banks[args.url]
             # try:
-            #     post = PostGenerator(lambda: question_bank.get_random_question(), desc=args.desc, get_story_func=lambda: args.story)()
+            #     post = PostGenerator(lambda: question_bank.get_random_question_url(), desc=args.desc, get_story_func=lambda: args.story)()
             # except Error as e:
             #     log.exception(e)
             #     await self.handle_error(e)
@@ -126,65 +121,23 @@ class LeetcodeBot:
 
     async def handle_upload_question_bank(self, ctx: commands.Context):
         question_file = ctx.message.attachments[0]
-
-        try:
-            question_bank = get_question_bank_from_attachment(question_file)
-            log.info(question_bank)
-        except ValueError as e:
-            log.exception(e)
-            await self.handle_error(
-                FailedToUploadQuestionBankError(), additional_messages=str(e)
-            )
-            return
-        except Exception as e:
-            log.exception(e)
-            await self.handle_error(FailedToUploadQuestionBankError())
-            return
-
-        async with self.state_lock:
-            question_bank_exists = question_bank.filename in self.question_banks
-            self.question_banks[question_bank.filename] = question_bank
-
-        if question_bank_exists:
-            msg = f"Successfully uploaded and replaced question bank with ID: {question_bank.filename}"
-        else:
-            msg = (
-                f"Successfully uploaded question bank with ID: {question_bank.filename}"
-            )
-
-        await self.send(msg, Channel.BOT)
+        response = await self.question_bank_manager.upload_question_bank(question_file)
+        await self.send(response, Channel.BOT)
 
     async def handle_get_question_bank(self, question_bank_name: str):
-        async with self.state_lock:
-            if not await self._check_question_bank_exists(question_bank_name):
-                return
-
-            file_path = self.question_banks[question_bank_name].convert_to_file()
-
+        file_path = await self.question_bank_manager.get_question_bank_download_url(
+            question_bank_name
+        )
         await self.send(
             f"{question_bank_name}:", Channel.BOT, file_attachment=file_path
         )
 
     async def handle_delete_question_bank(self, question_bank_name: str):
-        async with self.state_lock:
-            if not await self._check_question_bank_exists(question_bank_name):
-                return
-
-            try:
-                os.remove(QUESTION_BANK_DIR + question_bank_name)
-            except FileNotFoundError:
-                log.warning(f"Tried to delete, File not found for {question_bank_name}")
-                pass
-
-            del self.question_banks[question_bank_name]
-
+        await self.question_bank_manager.delete_question_bank(question_bank_name)
         await self.send(f"{question_bank_name} deleted!", Channel.BOT)
 
     async def handle_list_question_banks(self):
-        async with self.state_lock:
-            question_bank_names = list(self.question_banks.values())
-
-        msg = get_formatted_question_bank_list(question_bank_names)
+        msg = await self.question_bank_manager.get_question_bank_list_text()
         await self.send(msg, Channel.BOT)
 
     async def handle_view_schedulers(self):
@@ -221,6 +174,30 @@ class LeetcodeBot:
             if scheduled_post.should_delete():
                 self.schedulers.remove(scheduled_post)
 
+    async def handle_campaign(
+        self, time_str: str, days_str: str, question_bank_name: str
+    ):
+        # parse time and day
+        try:
+            time = parse_time_str(time_str)
+        except ValueError:
+            raise FailedToParseTimeStringError(time_str)
+
+        try:
+            days = parse_days(days_str)
+        except ValueError:
+            raise FailedToParseDaysStringError(days_str)
+
+        date_generator = DateGenerator(days, time)
+
+        campaign = Campaign(
+            self.question_bank_manager, question_bank_name, date_generator
+        )
+        await campaign.init()
+
+        await self.send(str(time), Channel.BOT)
+        await self.send(str(days), Channel.BOT)
+
     async def handle_error(
         self, error: Error, additional_messages: Optional[str] = None
     ):
@@ -231,33 +208,3 @@ class LeetcodeBot:
             f"\n{additional_messages}" if additional_messages else ""
         )
         await self.send(displayed_msg, Channel.BOT)
-
-    def _load_question_banks(self):
-        # Load question banks from file
-        log.info(f"Loading question banks from {QUESTION_BANK_DIR}...")
-        # Create directories if they don't exist
-        os.makedirs(QUESTION_BANK_DIR, exist_ok=True)
-
-        question_banks = os.listdir(QUESTION_BANK_DIR)
-        log.info(f"Question banks: {question_banks}")
-
-        for bank in question_banks:
-            log.info(f"Loading {QUESTION_BANK_DIR + bank}")
-            formatted_question_bank = csv_to_question_bank(
-                bank, open(QUESTION_BANK_DIR + bank, "r")
-            )
-            self.question_banks[bank] = formatted_question_bank
-
-    async def _check_question_bank_exists(self, question_bank_name):
-        # STATE LOCK MUST BE ACQUIRED ALREADY
-        if question_bank_name not in self.question_banks:
-            available_question_banks = get_formatted_question_bank_list(
-                list(self.question_banks.values())
-            )
-            await self.handle_error(
-                QuestionBankDoesNotExistError(question_bank_name),
-                additional_messages=available_question_banks,
-            )
-            return False
-
-        return True
