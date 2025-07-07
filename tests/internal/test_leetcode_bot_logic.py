@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import pytest_mock
 import pytest
+import pytest_asyncio
 
 from src.internal.leetcode_bot_logic import Channel, LeetcodeBot
 import src.internal.leetcode_bot_logic
@@ -12,8 +13,8 @@ from src.types.command_inputs import PostCommandArgs
 from tests.test_utils.datetime_test_utils import MockDateTime
 
 
-@pytest.fixture(scope="function")
-def lc_bot(mocker: pytest_mock.MockerFixture, monkeypatch):
+@pytest_asyncio.fixture(scope="function")
+async def lc_bot(mocker: pytest_mock.MockerFixture, monkeypatch):
     bot = LeetcodeBot()
 
     # Setup mock channels
@@ -21,7 +22,7 @@ def lc_bot(mocker: pytest_mock.MockerFixture, monkeypatch):
     bot_channel.send = mocker.AsyncMock()
     main_channel = mocker.Mock()
     main_channel.send = mocker.AsyncMock()
-    bot.init(main_channel=main_channel, bot_channel=bot_channel)
+    await bot.init(main_channel=main_channel, bot_channel=bot_channel)
 
     # Mock LC client
     bot.leetcode_client = mocker.Mock()

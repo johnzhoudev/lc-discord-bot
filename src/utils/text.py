@@ -36,5 +36,5 @@ def get_formatted_question_bank_list(banks: List[QuestionBank]):
         f"- {bank.filename} last updated {datetime.strftime(bank.last_updated_time.astimezone(eastern_time), '%Y-%m-%d %H:%M:%S')}"
         for bank in banks
     ]
-    msg = "Question banks:\n" + ("\n-".join(bank_lines))
+    msg = "Question banks:\n" + ("\n".join(bank_lines))
     return msg

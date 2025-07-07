@@ -6,9 +6,14 @@ def _format_error_text(msg: str = "An unexpected error occurred"):
 
 
 class Error(BaseException):
-    def __init__(self, msg: str, displayed_msg: str = ""):
+    def __init__(
+        self, msg: str, displayed_msg: str = "", additional_messages: str = ""
+    ):
         self.msg = msg
         self.displayed_msg = _format_error_text(displayed_msg if displayed_msg else msg)
+        self.displayed_msg = self.displayed_msg + (
+            f"\n{additional_messages}" if additional_messages else ""
+        )
 
 
 class FailedScrapeError(Error):
@@ -69,14 +74,21 @@ class FailedToGetPostError(Error):
 
 
 class FailedToUploadQuestionBankError(Error):
-    def __init__(self):
+    def __init__(self, error_msg: str = ""):
         displayed_msg = "Failed to upload question bank, please make sure question bank file is in csv format with line structure url<,optional completed?>"
-        super().__init__("Failed to upload question bank", displayed_msg=displayed_msg)
+        super().__init__(
+            "Failed to upload question bank",
+            displayed_msg=displayed_msg,
+            additional_messages=error_msg,
+        )
 
 
 class QuestionBankDoesNotExistError(Error):
-    def __init__(self, name: str):
-        super().__init__(f"Question bank {name} does not exist.")
+    def __init__(self, name: str, available_question_banks: str):
+        super().__init__(
+            f"Question bank {name} does not exist.",
+            additional_messages=available_question_banks,
+        )
 
 
 class NoMoreQuestionsInQuestionBankError(Error):

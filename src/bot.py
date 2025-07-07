@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 from src.types.command_inputs import PostCommandArgs
 from src.internal.leetcode_bot_logic import Channel, LeetcodeBot
-from src.types.errors import UnexpectedError
+from src.types.errors import Error, UnexpectedError
 from src.utils.boto3 import get_bot_token_from_ssm
 from src.utils.environment import (
     get_int_from_env,
@@ -68,7 +68,7 @@ async def on_ready():
 
     bot_channel = cast(TextChannel, bot.get_channel(BOT_CHANNEL_ID))
     main_channel = cast(TextChannel, bot.get_channel(MAIN_CHANNEL_ID))
-    lc_bot.init(main_channel, bot_channel)
+    await lc_bot.init(main_channel, bot_channel)
 
     # Start background scheduler
     check_for_schedulers.start()
@@ -77,11 +77,13 @@ async def on_ready():
 
 
 # Wrapper for handling unexpected exceptions
-def handle_unexpected_exceptions(func):
+def handle_exceptions(func):
     @functools.wraps(func)
     async def wrapper(*args, **kwargs):
         try:
             return await func(*args, **kwargs)
+        except Error as e:
+            await lc_bot.handle_error(e)
         except Exception as e:
             log.exception(f"An unexpected error occurred in {func.__name__}: {e}")
             await lc_bot.handle_error(UnexpectedError())
@@ -90,7 +92,7 @@ def handle_unexpected_exceptions(func):
 
 
 @bot.command()
-@handle_unexpected_exceptions
+@handle_exceptions
 async def post(
     ctx: commands.Context,
     url: str,
@@ -105,60 +107,46 @@ async def post(
 
 
 @bot.command()
-@handle_unexpected_exceptions
+@handle_exceptions
 async def uploadQuestionBank(ctx: commands.Context):
     await lc_bot.handle_upload_question_bank(ctx)
 
 
 @bot.command()
-@handle_unexpected_exceptions
+@handle_exceptions
 async def listQuestionBanks(ctx: commands.Context):
     await lc_bot.handle_list_question_banks()
 
 
 @bot.command()
-@handle_unexpected_exceptions
+@handle_exceptions
 async def getQuestionBank(ctx: commands.Context, question_bank_name: str):
-    try:
-        await lc_bot.handle_get_question_bank(question_bank_name)
-    except Exception as e:
-        log.exception(f"An unexpected error occurred: {e}")
-        await lc_bot.handle_error(UnexpectedError())
+    await lc_bot.handle_get_question_bank(question_bank_name)
 
 
 @bot.command()
-@handle_unexpected_exceptions
+@handle_exceptions
 async def deleteQuestionBank(ctx: commands.Context, question_bank_name: str):
-    try:
-        await lc_bot.handle_delete_question_bank(question_bank_name)
-    except Exception as e:
-        log.exception(f"An unexpected error occurred: {e}")
-        await lc_bot.handle_error(UnexpectedError())
+    await lc_bot.handle_delete_question_bank(question_bank_name)
 
 
 @bot.command()
-@handle_unexpected_exceptions
+@handle_exceptions
 async def viewSchedulers(ctx):
-    try:
-        await lc_bot.handle_view_schedulers()
-    except Exception as e:
-        log.exception(f"An unexpected error occurred: {e}")
-        await lc_bot.handle_error(UnexpectedError())
+    await lc_bot.handle_view_schedulers()
 
 
-# @bot.command()
-# @handle_unexpected_exceptions
-# async def campaign(ctx: commands.Context, time_schedule: str, day_schedule: str):
-#     try:
-#         await lc_bot.handle_
-#     except Exception as e:
-#         log.exception(f"An unexpected error occurred: {e}")
-#         await lc_bot.handle_error(UnexpectedError())
+@bot.command()
+@handle_exceptions
+async def campaign(
+    ctx: commands.Context, time_str: str, days_str: str, question_bank_name: str
+):
+    await lc_bot.handle_campaign(time_str, days_str, question_bank_name)
 
 
 # Background task to post
 @tasks.loop(seconds=3)
-@handle_unexpected_exceptions
+@handle_exceptions
 async def check_for_schedulers():
     await lc_bot.handle_check_for_schedulers()
 
