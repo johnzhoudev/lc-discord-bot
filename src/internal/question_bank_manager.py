@@ -82,6 +82,13 @@ class QuestionBankManager:
 
             del self.question_banks[question_bank_name]
 
+    async def get_random_question_url_from_question_bank(self, question_bank_name: str):
+        async with self.state_lock:
+            await self._assert_question_bank_exists(
+                question_bank_name=question_bank_name
+            )
+            return self.question_banks[question_bank_name].get_random_question_url()
+
     async def get_question_bank_list_text(self):
         async with self.state_lock:
             question_bank_names = list(self.question_banks.values())

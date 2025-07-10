@@ -72,6 +72,13 @@ class LeetcodeBot:
 
     async def handle_post_command(self, args: PostCommandArgs):
         date = None
+
+        async def get_post_url():
+            return args.url
+
+        async def get_story():
+            return args.story
+
         if args.date_str:
             try:
                 date = parse_date_str(args.date_str)
@@ -84,20 +91,17 @@ class LeetcodeBot:
                 await self.handle_error(ScheduledDateInPastError(date))
                 return
 
-            def should_post(curtime):
-                return curtime > date
+            def should_post():
+                return datetime.now() > date
 
-            async with self.state_lock:
-                self.schedulers.append(
-                    Scheduler(
-                        PostGenerator(
-                            lambda: args.url,
-                            desc=args.desc,
-                            get_story_func=lambda: args.story,
-                        ),
-                        should_post,
-                    )
+            await self.add_to_schedulers(
+                Scheduler(
+                    PostGenerator(
+                        get_post_url, desc=args.desc, get_story_func=get_story
+                    ),
+                    should_post,
                 )
+            )
 
             await self.send(
                 get_schedule_post_response_text(args.url, date), Channel.BOT
@@ -114,8 +118,8 @@ class LeetcodeBot:
             #     await self.handle_error(e)
             #     return
 
-            post = PostGenerator(
-                lambda: args.url, desc=args.desc, get_story_func=lambda: args.story
+            post = await PostGenerator(
+                get_post_url, desc=args.desc, get_story_func=get_story
             )()
             await self.post_question(post)
 
@@ -150,15 +154,13 @@ class LeetcodeBot:
     async def handle_check_for_schedulers(self):
         # TODO: Make this async safe!
 
-        curtime = datetime.now()
-
         # Make shallow copy so can be reused
         for scheduled_post in self.schedulers[:]:  # noqa
-            if not scheduled_post.should_post(curtime):
+            if not scheduled_post.should_post():
                 continue
 
             log.info(f"Scheduling post {scheduled_post.id}")
-            post = scheduled_post.get_post()
+            post = await scheduled_post.get_post()
 
             if not post:
                 await self.handle_error(FailedToGetPostError(scheduled_post.id))
@@ -191,12 +193,18 @@ class LeetcodeBot:
         date_generator = DateGenerator(days, time)
 
         campaign = Campaign(
-            self.question_bank_manager, question_bank_name, date_generator
+            self.question_bank_manager, question_bank_name, date_generator, length=1
         )
         await campaign.init()
 
-        await self.send(str(time), Channel.BOT)
-        await self.send(str(days), Channel.BOT)
+        # TODO: Add to scheduler, and add to scheduling loop
+        # Add to scheduler
+        await self.add_to_schedulers(campaign)
+
+        await self.send("Successfully added campaign to schedulers", Channel.BOT)
+
+        # await self.send(str(time), Channel.BOT)
+        # await self.send(str(days), Channel.BOT)
 
     async def handle_error(
         self, error: Error, additional_messages: Optional[str] = None
@@ -208,3 +216,7 @@ class LeetcodeBot:
             f"\n{additional_messages}" if additional_messages else ""
         )
         await self.send(displayed_msg, Channel.BOT)
+
+    async def add_to_schedulers(self, scheduler: Scheduler):
+        async with self.state_lock:
+            self.schedulers.append(scheduler)
