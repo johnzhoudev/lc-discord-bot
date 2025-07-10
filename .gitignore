@@ -8,3 +8,4 @@ text.json
 .pytest_cache
 .terraform
 terraform.tfvars
+.DS_Store

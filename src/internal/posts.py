@@ -1,7 +1,6 @@
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Callable, ClassVar, Optional
+from typing import Awaitable, Callable, ClassVar, Optional
 
 from src.internal.leetcode_client import LeetcodeClient, QuestionData
 from src.types.errors import FailedScrapeError
@@ -30,6 +29,10 @@ class Post:
         type(self)._id_counter += 1
 
 
+async def _default_get_story_func():
+    return None
+
+
 class PostGenerator:
     # TODO: Add question banks
     # TODO: Add story generation
@@ -37,9 +40,9 @@ class PostGenerator:
 
     def __init__(
         self,
-        get_url_func: Callable[[], str],
+        get_url_func: Callable[[], Awaitable[str]],
         desc: Optional[str] = None,
-        get_story_func: Callable[[], str | None] = lambda: None,
+        get_story_func: Callable[[], Awaitable[str | None]] = _default_get_story_func,
     ):
         """
         Only 1 of url or question bank can be specified
@@ -48,11 +51,11 @@ class PostGenerator:
         self.desc = desc
         self.get_story_func = get_story_func
 
-    def __call__(self) -> Post:
-        return self.generate()
+    async def __call__(self) -> Post:
+        return await self.generate()
 
-    def generate(self) -> Post:
-        url = self.get_url_func()
+    async def generate(self) -> Post:
+        url = await self.get_url_func()
         log.info(f"Got url {url}")
         try:
             question_data = leetcode_client.scrape_question(url)
@@ -60,7 +63,9 @@ class PostGenerator:
             raise FailedScrapeError(url)
 
         return Post(
-            question_data=question_data, desc=self.desc, story=self.get_story_func()
+            question_data=question_data,
+            desc=self.desc,
+            story=await self.get_story_func(),
         )
 
 
@@ -72,16 +77,16 @@ class Scheduler:
     _id_counter: ClassVar[int] = 0
 
     id: int
-    __get_post_func: Callable[[], Post]
+    __get_post_func: Callable[[], Awaitable[Post]]
     __should_post_func: Callable[
-        [datetime], bool
+        [], bool
     ]  # pass datetime.now, will return True if should post
     repeats: int = 1
 
     def __init__(
         self,
-        get_post_func: Callable[[], Post],
-        should_post_func: Callable[[datetime], bool],
+        get_post_func: Callable[[], Awaitable[Post]],
+        should_post_func: Callable[[], bool],
         repeats: int = 1,
     ):
         self.id = (
@@ -93,16 +98,16 @@ class Scheduler:
         self.__should_post_func = should_post_func
         self.repeats = repeats
 
-    def get_post(self):
+    async def get_post(self):
         if self.repeats == 0:
             return None
-        post = self.__get_post_func()
+        post = await self.__get_post_func()
         if self.repeats > 0:
             self.repeats -= 1  # skip if -1
         return post
 
-    def should_post(self, curtime: datetime):
-        return self.__should_post_func(curtime)
+    def should_post(self):
+        return self.__should_post_func()
 
     def should_delete(self):
         return self.repeats == 0
