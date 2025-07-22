@@ -8,7 +8,7 @@ from discord import File
 from src.internal.campaigns import Campaign
 from src.internal.date_generator import DateGenerator
 from src.internal.question_bank_manager import QuestionBankManager
-from src.types.command_inputs import PostCommandArgs
+from src.types.command_inputs import CampaignCommandArgs, PostCommandArgs
 from src.types.errors import (
     Error,
     FailedScrapeError,
@@ -187,31 +187,28 @@ class LeetcodeBot:
 
     async def handle_campaign(
         self,
-        time_str: str,
-        days_str: str,
-        question_bank_name: str,
-        story_prompt: Optional[str] = None,
+        args: CampaignCommandArgs,
     ):
         # parse time and day
         try:
-            time = parse_time_str(time_str)
+            time = parse_time_str(args.time_str)
         except ValueError:
-            raise FailedToParseTimeStringError(time_str)
+            raise FailedToParseTimeStringError(args.time_str)
 
         try:
-            days = parse_days(days_str)
+            days = parse_days(args.days_str)
         except ValueError:
-            raise FailedToParseDaysStringError(days_str)
+            raise FailedToParseDaysStringError(args.days_str)
 
         # Generate date
         date_generator = DateGenerator(days, time)
 
         campaign = Campaign(
             self.question_bank_manager,
-            question_bank_name,
+            args.question_bank_name,
             date_generator,
-            length=3,
-            story_prompt=story_prompt,
+            length=args.length,
+            story_prompt=args.story_prompt,
         )
         await campaign.init()
 

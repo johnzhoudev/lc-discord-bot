@@ -8,7 +8,7 @@ from discord.channel import TextChannel
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
-from src.types.command_inputs import PostCommandArgs
+from src.types.command_inputs import CampaignCommandArgs, PostCommandArgs
 from src.internal.leetcode_bot_logic import Channel, LeetcodeBot
 from src.types.errors import Error, UnexpectedError
 from src.utils.boto3 import get_from_ssm
@@ -154,13 +154,19 @@ async def campaign(
     days_str: str,
     question_bank_name: str,
     story_prompt: Optional[str] = None,
+    length: int = -1,
 ):
     """
     If story_prompt is included, then stories will be automatically generated. Otherwise, story will be omitted.
     """
-    await lc_bot.handle_campaign(
-        time_str, days_str, question_bank_name, story_prompt=story_prompt
+    args = CampaignCommandArgs(
+        time_str=time_str,
+        days_str=days_str,
+        question_bank_name=question_bank_name,
+        length=length,
+        story_prompt=story_prompt,
     )
+    await lc_bot.handle_campaign(args)
 
 
 # Background task to post
