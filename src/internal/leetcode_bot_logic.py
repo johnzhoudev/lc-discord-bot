@@ -20,6 +20,7 @@ from src.types.errors import (
 )
 from src.utils.leetcode_client import LeetcodeClient
 from src.internal.posts import Post, PostGenerator, Scheduler
+import src.internal.settings as settings
 from enum import Enum
 from typing import Dict, Optional
 
@@ -50,7 +51,10 @@ class LeetcodeBot:
     # For simplicity, just keep one lock and grab it for all state-changing operations
     state_lock = asyncio.Lock()
 
-    def __init__(self, init_openai_client: bool = True):
+    def __init__(self):
+        if settings.is_test:
+            return
+
         # Init here on creation, not definition
         self.openai_client = OpenAIClient()
 

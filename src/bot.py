@@ -32,7 +32,7 @@ log.info(f"is_dev: {is_dev}")
 
 # Must initialize this before anything else
 # ie, openai client
-settings.initialize(is_dev)
+settings.initialize(is_dev, is_test=False)
 
 if is_dev:
     # Env Setup
