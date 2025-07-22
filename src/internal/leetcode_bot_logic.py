@@ -50,7 +50,7 @@ class LeetcodeBot:
     # For simplicity, just keep one lock and grab it for all state-changing operations
     state_lock = asyncio.Lock()
 
-    def __init__(self):
+    def __init__(self, init_openai_client: bool = True):
         # Init here on creation, not definition
         self.openai_client = OpenAIClient()
 
