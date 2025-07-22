@@ -3,7 +3,7 @@ https://leetcode.com/problems/valid-anagram/,False
 https://leetcode.com/problems/two-sum/,False
 https://leetcode.com/problems/group-anagrams/,False
 https://leetcode.com/problems/top-k-frequent-elements/,False
-https://leetcode.com/problems/encode-and-decode-strings/,False
+https://leetcode.com/problems/encode-and-decode-strings/,True
 https://leetcode.com/problems/product-of-array-except-self/,False
 https://leetcode.com/problems/longest-consecutive-sequence/,False
 https://leetcode.com/problems/valid-palindrome/,False
@@ -41,11 +41,11 @@ https://leetcode.com/problems/design-add-and-search-words-data-structure/,False
 https://leetcode.com/problems/word-search-ii/,False
 https://leetcode.com/problems/number-of-islands/,False
 https://leetcode.com/problems/clone-graph/,True
-https://leetcode.com/problems/pacific-atlantic-water-flow/,False
+https://leetcode.com/problems/pacific-atlantic-water-flow/,True
 https://leetcode.com/problems/course-schedule/,False
-https://leetcode.com/problems/graph-valid-tree/,False
-https://leetcode.com/problems/number-of-connected-components-in-an-undirected-graph/,False
-https://leetcode.com/problems/alien-dictionary/,False
+https://leetcode.com/problems/graph-valid-tree/,True
+https://leetcode.com/problems/number-of-connected-components-in-an-undirected-graph/,True
+https://leetcode.com/problems/alien-dictionary/,True
 https://leetcode.com/problems/climbing-stairs/,False
 https://leetcode.com/problems/house-robber/,False
 https://leetcode.com/problems/house-robber-ii/,False
@@ -63,8 +63,8 @@ https://leetcode.com/problems/jump-game/,False
 https://leetcode.com/problems/insert-interval/,False
 https://leetcode.com/problems/merge-intervals/,False
 https://leetcode.com/problems/non-overlapping-intervals/,False
-https://leetcode.com/problems/meeting-rooms/,False
-https://leetcode.com/problems/meeting-rooms-ii/,False
+https://leetcode.com/problems/meeting-rooms/,True
+https://leetcode.com/problems/meeting-rooms-ii/,True
 https://leetcode.com/problems/rotate-image/,False
 https://leetcode.com/problems/spiral-matrix/,False
 https://leetcode.com/problems/set-matrix-zeroes/,False

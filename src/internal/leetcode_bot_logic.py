@@ -18,12 +18,13 @@ from src.types.errors import (
     FailedToParseTimeStringError,
     ScheduledDateInPastError,
 )
-from src.internal.leetcode_client import LeetcodeClient
+from src.utils.leetcode_client import LeetcodeClient
 from src.internal.posts import Post, PostGenerator, Scheduler
 from enum import Enum
 from typing import Dict, Optional
 
-from src.utils.string import parse_date_str, parse_days, parse_time_str
+from src.utils.openai_client import OpenAIClient
+from src.utils.string_utils import parse_date_str, parse_days, parse_time_str
 from src.utils.text import (
     get_question_text,
     get_schedule_post_response_text,
@@ -48,6 +49,10 @@ class LeetcodeBot:
 
     # For simplicity, just keep one lock and grab it for all state-changing operations
     state_lock = asyncio.Lock()
+
+    def __init__(self):
+        # Init here on creation, not definition
+        self.openai_client = OpenAIClient()
 
     async def init(self, main_channel: TextChannel, bot_channel: TextChannel):
         self.channels[Channel.MAIN] = main_channel
@@ -76,7 +81,7 @@ class LeetcodeBot:
         async def get_post_url():
             return args.url
 
-        async def get_story():
+        def get_story(*func_args):
             return args.story
 
         if args.date_str:
@@ -177,7 +182,11 @@ class LeetcodeBot:
                 self.schedulers.remove(scheduled_post)
 
     async def handle_campaign(
-        self, time_str: str, days_str: str, question_bank_name: str
+        self,
+        time_str: str,
+        days_str: str,
+        question_bank_name: str,
+        story_prompt: Optional[str] = None,
     ):
         # parse time and day
         try:
@@ -190,10 +199,15 @@ class LeetcodeBot:
         except ValueError:
             raise FailedToParseDaysStringError(days_str)
 
+        # Generate date
         date_generator = DateGenerator(days, time)
 
         campaign = Campaign(
-            self.question_bank_manager, question_bank_name, date_generator, length=1
+            self.question_bank_manager,
+            question_bank_name,
+            date_generator,
+            length=3,
+            story_prompt=story_prompt,
         )
         await campaign.init()
 
@@ -205,6 +219,11 @@ class LeetcodeBot:
 
         # await self.send(str(time), Channel.BOT)
         # await self.send(str(days), Channel.BOT)
+
+    async def test(self, prompt: Optional[str]):
+        client = OpenAIClient()
+        res = client.test(prompt)
+        return res
 
     async def handle_error(
         self, error: Error, additional_messages: Optional[str] = None

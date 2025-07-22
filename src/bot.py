@@ -11,11 +11,12 @@ from dotenv import load_dotenv
 from src.types.command_inputs import PostCommandArgs
 from src.internal.leetcode_bot_logic import Channel, LeetcodeBot
 from src.types.errors import Error, UnexpectedError
-from src.utils.boto3 import get_bot_token_from_ssm
+from src.utils.boto3 import get_from_ssm
 from src.utils.environment import (
     get_int_from_env,
     get_from_env,
 )
+import src.internal.settings as settings
 
 # Logging Setup
 logging.basicConfig(level=logging.INFO)
@@ -29,15 +30,18 @@ args = parser.parse_args()
 is_dev = args.dev
 log.info(f"is_dev: {is_dev}")
 
-# Env Setup
-load_dotenv()
+# Must initialize this before anything else
+# ie, openai client
+settings.initialize(is_dev)
 
 if is_dev:
+    # Env Setup
+    load_dotenv()
     log.info("Loading bot token from env")
     BOT_TOKEN = get_from_env("BOT_TOKEN")
 else:
     log.info("Loading bot token from ssm")
-    BOT_TOKEN = get_bot_token_from_ssm()
+    BOT_TOKEN = get_from_ssm("BOT_TOKEN")
 
 BOT_CHANNEL_ID = get_int_from_env("BOT_CHANNEL_ID")
 MAIN_CHANNEL_ID = get_int_from_env("MAIN_CHANNEL_ID")
@@ -92,6 +96,12 @@ def handle_exceptions(func):
 
 
 @bot.command()
+async def test(ctx: commands.Context, prompt: Optional[str] = None):
+    res = await lc_bot.test(prompt)
+    await lc_bot.send(res, Channel.BOT)
+
+
+@bot.command()
 @handle_exceptions
 async def post(
     ctx: commands.Context,
@@ -139,13 +149,22 @@ async def viewSchedulers(ctx):
 @bot.command()
 @handle_exceptions
 async def campaign(
-    ctx: commands.Context, time_str: str, days_str: str, question_bank_name: str
+    ctx: commands.Context,
+    time_str: str,
+    days_str: str,
+    question_bank_name: str,
+    story_prompt: Optional[str] = None,
 ):
-    await lc_bot.handle_campaign(time_str, days_str, question_bank_name)
+    """
+    If story_prompt is included, then stories will be automatically generated. Otherwise, story will be omitted.
+    """
+    await lc_bot.handle_campaign(
+        time_str, days_str, question_bank_name, story_prompt=story_prompt
+    )
 
 
 # Background task to post
-@tasks.loop(seconds=3)
+@tasks.loop(seconds=30)
 @handle_exceptions
 async def check_for_schedulers():
     await lc_bot.handle_check_for_schedulers()
