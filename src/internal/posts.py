@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Awaitable, Callable, ClassVar, Optional
 
-from src.internal.leetcode_client import LeetcodeClient, QuestionData
+from src.utils.leetcode_client import LeetcodeClient, QuestionData
 from src.types.errors import FailedScrapeError
 
 # Logging Setup
@@ -29,12 +29,11 @@ class Post:
         type(self)._id_counter += 1
 
 
-async def _default_get_story_func():
+def _default_get_story_func(*args):
     return None
 
 
 class PostGenerator:
-    # TODO: Add question banks
     # TODO: Add story generation
     # TODO: Add hint generation
 
@@ -42,7 +41,9 @@ class PostGenerator:
         self,
         get_url_func: Callable[[], Awaitable[str]],
         desc: Optional[str] = None,
-        get_story_func: Callable[[], Awaitable[str | None]] = _default_get_story_func,
+        get_story_func: Callable[
+            [QuestionData], str | None
+        ] = _default_get_story_func,  # Accepts QuestionData and story history
     ):
         """
         Only 1 of url or question bank can be specified
@@ -65,7 +66,7 @@ class PostGenerator:
         return Post(
             question_data=question_data,
             desc=self.desc,
-            story=await self.get_story_func(),
+            story=self.get_story_func(question_data),
         )
 
 

@@ -147,7 +147,7 @@ class QuestionBankManager:
             url = args[0]
             if not is_url(url):
                 raise ValueError("Url is not valid!")
-            posted = False if len(args) == 1 else bool(args[1])
+            posted = False if len(args) == 1 else args[1] == "True"
             questions.append(Question(url=url, posted=posted))
 
         return QuestionBank(

@@ -2,8 +2,8 @@ from datetime import time, datetime
 import src.utils
 
 import pytest
-from src.utils.string import parse_days, parse_time_str, parse_date_str
-import src.utils.string
+from src.utils.string_utils import parse_days, parse_time_str, parse_date_str
+import src.utils.string_utils
 
 
 @pytest.mark.parametrize(
@@ -130,7 +130,7 @@ def test_parse_date_str(date_str, now_date, expected_date, monkeypatch):
         def now(cls, tz=None):
             return now_date
 
-    monkeypatch.setattr(src.utils.string, "datetime", MockDateTime)
+    monkeypatch.setattr(src.utils.string_utils, "datetime", MockDateTime)
     assert parse_date_str(date_str) == expected_date
 
 
@@ -149,7 +149,7 @@ def test_parse_date_str_failures(date_str, now_date, monkeypatch):
         def now(cls, tz=None):
             return now_date
 
-    monkeypatch.setattr(src.utils.string, "datetime", MockDateTime)
+    monkeypatch.setattr(src.utils.string_utils, "datetime", MockDateTime)
 
     with pytest.raises(ValueError):
         parse_date_str(date_str)
