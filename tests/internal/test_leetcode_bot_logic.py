@@ -17,7 +17,7 @@ from tests.test_utils.datetime_test_utils import MockDateTime
 @pytest_asyncio.fixture(scope="function")
 async def lc_bot(mocker: pytest_mock.MockerFixture, monkeypatch):
     load_dotenv()
-    bot = LeetcodeBot(init_openai_client=False)
+    bot = LeetcodeBot()
 
     # Setup mock channels
     bot_channel = mocker.Mock()
