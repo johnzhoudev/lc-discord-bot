@@ -8,6 +8,7 @@ from discord import File
 from src.internal.campaigns import Campaign
 from src.internal.date_generator import DateGenerator
 from src.internal.question_bank_manager import QuestionBankManager
+from src.internal.stats import StatsManager
 from src.types.command_inputs import CampaignCommandArgs, PostCommandArgs
 from src.types.errors import (
     Error,
@@ -29,6 +30,7 @@ from src.utils.string_utils import parse_date_str, parse_days, parse_time_str
 from src.utils.text import (
     get_question_text,
     get_schedule_post_response_text,
+    get_stats_text,
 )
 
 
@@ -47,6 +49,7 @@ class LeetcodeBot:
     completed_questions: set[str] = set()
     leetcode_client = LeetcodeClient()
     question_bank_manager = QuestionBankManager()
+    stats = StatsManager()
 
     # For simplicity, just keep one lock and grab it for all state-changing operations
     state_lock = asyncio.Lock()
@@ -58,11 +61,15 @@ class LeetcodeBot:
         # Init here on creation, not definition
         self.openai_client = OpenAIClient()
 
-    async def init(self, main_channel: TextChannel, bot_channel: TextChannel):
+    async def init(
+        self, main_channel: TextChannel, bot_channel: TextChannel, members: list[str]
+    ):
         self.channels[Channel.MAIN] = main_channel
         self.channels[Channel.BOT] = bot_channel
 
         await self.question_bank_manager.load_question_banks()
+
+        await self.stats.init(members)
 
         log.info("Successfully initialized LeetcodeBot")
 
@@ -71,13 +78,18 @@ class LeetcodeBot:
     ):
         if file_attachment:
             file = File(open(file_attachment, "rb"))
-            await self.channels[channel].send(msg, file=file)
+            res = await self.channels[channel].send(msg, file=file)
         else:
-            await self.channels[channel].send(msg)
-        log.info(f"Sent {msg} to channel {channel}")
+            res = await self.channels[channel].send(msg)
+        log.info(f"Sent {msg} to channel {channel}, id {res.id}")
+        return res
 
     async def post_question(self, post: Post):
-        await self.send(get_question_text(post), Channel.MAIN)
+        message = await self.send(get_question_text(post), Channel.MAIN)
+        post.set_id(
+            message.id
+        )  # Posts aren't really stored anywhere, so maybe this is redundant for now
+        await self.stats.handle_new_post(message.id)
 
     async def handle_post_command(self, args: PostCommandArgs):
         date = None
@@ -220,6 +232,17 @@ class LeetcodeBot:
 
         # await self.send(str(time), Channel.BOT)
         # await self.send(str(days), Channel.BOT)
+
+    async def handle_reaction_add(self, user_name: str, post_id: int, emoji: str):
+        await self.stats.log_user_reaction_add(user_name, post_id, emoji)
+
+    async def handle_reaction_remove(self, user_name: str, post_id: int, emoji: str):
+        await self.stats.log_user_reaction_remove(user_name, post_id, emoji)
+
+    async def handle_stats(self):
+        user_stats = await self.stats.get_user_stats()
+        text = get_stats_text(user_stats)
+        await self.send(text, Channel.BOT)
 
     async def test(self, prompt: Optional[str]):
         client = OpenAIClient()

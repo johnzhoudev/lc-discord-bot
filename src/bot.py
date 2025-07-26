@@ -7,6 +7,7 @@ import discord
 from discord.channel import TextChannel
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
+from discord.raw_models import RawReactionActionEvent
 
 from src.types.command_inputs import CampaignCommandArgs, PostCommandArgs
 from src.internal.leetcode_bot_logic import Channel, LeetcodeBot
@@ -70,9 +71,17 @@ async def on_command_error(ctx, error):
 async def on_ready():
     log.info("LC-Bot Ready")
 
+    log.info("Getting members")
+    members = []
+    for guild in bot.guilds:
+        log.info(f"Fetching members for: {guild.name}")
+        async for member in guild.fetch_members(limit=None):
+            if not member.bot:
+                members.append(member.name)
+
     bot_channel = cast(TextChannel, bot.get_channel(BOT_CHANNEL_ID))
     main_channel = cast(TextChannel, bot.get_channel(MAIN_CHANNEL_ID))
-    await lc_bot.init(main_channel, bot_channel)
+    await lc_bot.init(main_channel, bot_channel, members)
 
     # Start background scheduler
     check_for_schedulers.start()
@@ -169,11 +178,33 @@ async def campaign(
     await lc_bot.handle_campaign(args)
 
 
+@bot.command()
+@handle_exceptions
+async def stats(ctx: commands.Context):
+    await lc_bot.handle_stats()
+
+
 # Background task to post
 @tasks.loop(seconds=30)
 @handle_exceptions
 async def check_for_schedulers():
     await lc_bot.handle_check_for_schedulers()
+
+
+@bot.event
+async def on_raw_reaction_add(data: RawReactionActionEvent):
+    user = await bot.fetch_user(data.user_id)
+    message = await lc_bot.channels[Channel.MAIN].fetch_message(data.message_id)
+
+    # Use message id as post id
+    await lc_bot.handle_reaction_add(user.name, message.id, str(data.emoji))
+
+
+@bot.event
+async def on_raw_reaction_remove(data: RawReactionActionEvent):
+    user = await bot.fetch_user(data.user_id)
+    message = await lc_bot.channels[Channel.MAIN].fetch_message(data.message_id)
+    await lc_bot.handle_reaction_remove(user.name, message.id, str(data.emoji))
 
 
 bot.run(BOT_TOKEN)
