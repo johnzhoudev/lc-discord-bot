@@ -244,6 +244,12 @@ class LeetcodeBot:
         text = get_stats_text(user_stats)
         await self.send(text, Channel.BOT)
 
+    async def handle_delete_scheduler(self, id: int):
+        async with self.state_lock:
+            del self.schedulers[id]
+
+        await self.send(f"Scheduler {id} deleted.", Channel.BOT)
+
     async def test(self, prompt: Optional[str]):
         client = OpenAIClient()
         res = client.test(prompt)
