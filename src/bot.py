@@ -151,8 +151,14 @@ async def deleteQuestionBank(ctx: commands.Context, question_bank_name: str):
 
 @bot.command()
 @handle_exceptions
-async def viewSchedulers(ctx):
+async def listSchedulers(ctx):
     await lc_bot.handle_view_schedulers()
+
+
+@bot.command()
+@handle_exceptions
+async def deleteScheduler(ctx, scheduler_id: int):
+    await lc_bot.handle_delete_scheduler(scheduler_id)
 
 
 @bot.command()
