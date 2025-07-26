@@ -24,7 +24,7 @@ async def lc_bot(mocker: pytest_mock.MockerFixture, monkeypatch):
     bot_channel.send = mocker.AsyncMock()
     main_channel = mocker.Mock()
     main_channel.send = mocker.AsyncMock()
-    await bot.init(main_channel=main_channel, bot_channel=bot_channel)
+    await bot.init(main_channel=main_channel, bot_channel=bot_channel, members=[])
 
     # Mock LC client
     bot.leetcode_client = mocker.Mock()

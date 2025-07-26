@@ -5,6 +5,8 @@ from src.internal.posts import Post
 from src.internal.question_bank import QuestionBank
 import pytz
 
+from src.internal.stats import UserStats
+
 
 def get_question_text(post: Post):
     date = datetime.now().date().strftime("%B %d, %Y")
@@ -38,3 +40,21 @@ def get_formatted_question_bank_list(banks: List[QuestionBank]):
     ]
     msg = "Question banks:\n" + ("\n".join(bank_lines))
     return msg
+
+
+def get_stats_text(user_stats: List[UserStats]):
+    lines = []
+
+    lines.append("Streak")
+    user_stats.sort(key=lambda x: x.streak, reverse=True)
+    for stat in user_stats:
+        lines.append(f"{stat.user_name}: {stat.streak}")
+
+    lines.append("")
+
+    lines.append("Total Completed")
+    user_stats.sort(key=lambda x: x.total_completed, reverse=True)
+    for stat in user_stats:
+        lines.append(f"{stat.user_name}: {stat.total_completed}")
+
+    return "\n".join(lines)

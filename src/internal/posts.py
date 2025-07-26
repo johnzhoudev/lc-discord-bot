@@ -16,17 +16,13 @@ class Post:
     Data class for posts, generated
     """
 
-    _id_counter: ClassVar[int] = 0
-
     id: int = field(init=False)  # Not passed to init
-
     question_data: QuestionData
     desc: Optional[str] = None
     story: Optional[str] = None
 
-    def __post_init__(self):
-        self.id = type(self)._id_counter  # Use type(self) to support inheritance
-        type(self)._id_counter += 1
+    def set_id(self, id):
+        self.id = id
 
 
 def _default_get_story_func(*args):
