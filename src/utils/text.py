@@ -8,12 +8,16 @@ import pytz
 from src.internal.stats import UserStats
 
 
+def format_story_text(story: str):
+    return f"```\n{story}\n```"
+
+
 def get_question_text(post: Post):
     date = datetime.now().date().strftime("%B %d, %Y")
 
     story_text = None
     if post.story:
-        story_text = f"\n```\n{post.story}\n```\n"
+        story_text = f"\n{format_story_text(post.story)}\n"
 
     return f"""
 ============================{story_text or ""}

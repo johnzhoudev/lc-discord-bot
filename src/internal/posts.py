@@ -110,6 +110,12 @@ class Scheduler:
     def should_post(self):
         return self.__should_post_func()
 
+    def should_final_post(self):
+        return False
+
+    async def get_final_post(self) -> str:
+        raise RuntimeError("Unimplemented get_final_post")
+
     def should_delete(self):
         return self.repeats == 0
 

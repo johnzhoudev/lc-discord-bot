@@ -7,12 +7,11 @@ The stories you generate should be:
 
 1. 1 paragraph long, or 6 sentences max. 
 2. Follow a narrative structure: (exposition, rising action, climax, falling action, and resolution) over the course of the campaign, with a central plot established in the introduction.
-3. Loosely related to the leetcode question provided.
-4. Following the campaign instructions / theme provided by the user.
-5. Each section should connect with the previous section in a continuous story.
-6. Each section should end in an "ask" where the characters in the story need to solve a problem related to the leetcode question provided. Ie, will the characters finish the task in time?
-7. Subsequent sections should start by addressing if the characters succeeded the previous story's "ask" or not.
-8. You will be given a PERCENT_USERS_COMPLETE: percentage, representing the percent of users that completed the question. This number should 
+3. Following the campaign instructions / theme provided by the user.
+4. Each section should connect with the previous section in a continuous story.
+5. Each section should end in an "ask" where the characters in the story need to solve a problem related to the leetcode question provided. Ie, will the characters finish the task in time?
+6. Subsequent sections should start by addressing if the characters succeeded the previous story's "ask" or not.
+7. You will be given a PERCENT_USERS_COMPLETE: percentage, representing the percent of users that completed the question. This number should 
 affect how the story unfolds and the degree to which the characters succeeded the previous story's "ask". For example, 
 - a PERCENT_USERS_COMPLETE of 1 should indicate the characters excelled at completing the story's ask, 
 - a PERCENT_USERS_COMPLETE of 0.8 should indicate the ask was mostly fulfilled, with some hiccups but overally successful,
@@ -20,8 +19,11 @@ affect how the story unfolds and the degree to which the characters succeeded th
 - a PERCENT_USERS_COMPLETE of 0.5 should indicate the ask was only halfway fufilled,
 - a PERCENT_USERS_COMPLETE of 0.25 should indicate the task was somewhat but not really fulfilled,
 - a PERCENT_USERS_COMPLETE of 0 should indicate the task was completely failed
-Do NOT output this value. Only use this value to determine how to story unfolds.
-9. The number of story "asks" the characters complete should influence the ending of the story. You should give the characters a GOOD ending if most of the tasks were 
+Do NOT output this value. Only use this value to determine how the previous story's ASK unfolded. Do NOT use this value to influence the upcoming story's ask.
+8. The story MUST be based on the leetcode question description provided for the most recent story.
+9. If the characters fail a story's "ask", continue the story with a new "ask" based on the new leetcode question description. 
+
+10. The number of story "asks" the characters complete should influence the ending of the story. You should give the characters a GOOD ending if most of the tasks were 
 complete. You should give the characters a BAD ending if not that many tasks were complete.
 
 """
@@ -41,6 +43,15 @@ The story so far:
 {}
 """
 
+STORY_ENDING_KICKSTART_PROMPT = """
+Please write an ending to the story.
+
+The number of story "asks" the characters complete should influence the ending of the story. You should give the characters a GOOD ending if most of the tasks were 
+complete. You should give the characters a BAD ending if not that many tasks were complete.
+
+Ending: 
+"""
+
 STORY_GENERATION_KICKSTART_PROMPT = """
 Here is the leetcode question description you should base this next part on:
 {}
@@ -53,6 +64,16 @@ Here is the leetcode question description you should base this next part on:
 
 This story never ends. Now, write the next part the story:
 """
+
+
+def get_story_ending_kickstart_prompt(last_story_percent_complete: float | None = None):
+    res = ""
+
+    if last_story_percent_complete is not None:
+        res += f"The last story had the following PERCENT_USERS_COMPLETE: {last_story_percent_complete}\n\n"
+
+    res += STORY_ENDING_KICKSTART_PROMPT
+    return res
 
 
 def get_story_generation_kickstart_prompt(
