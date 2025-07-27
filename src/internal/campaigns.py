@@ -112,16 +112,8 @@ class Campaign(Scheduler):
             }
             inputs.append(history)
 
-        inputs.append(
-            {
-                "role": "user",
-                "content": get_story_generation_kickstart_prompt(
-                    question_data.desc, len(self.story_history) + 1, self.length
-                ),
-            }
-        )
-
         # User completion
+        percent_complete = None
         if self.posts:
             last_post = self.posts[-1]
             post_id = last_post.id
@@ -131,7 +123,22 @@ class Campaign(Scheduler):
             num_complete, num_total = await self.stats.get_num_users_finished_question(
                 post_id
             )
-            log.info(f"num_complete: {num_complete}, num_total: {num_total}")
+            percent_complete = num_complete / num_total
+            log.info(
+                f"num_complete: {num_complete}, num_total: {num_total}, percent: {percent_complete}"
+            )
+
+        inputs.append(
+            {
+                "role": "user",
+                "content": get_story_generation_kickstart_prompt(
+                    question_data.desc,
+                    len(self.story_history) + 1,
+                    self.length,
+                    last_story_percent_complete=percent_complete,
+                ),
+            }
+        )
 
         log.info("Running story generation with the following:")
         log.info(inputs)
