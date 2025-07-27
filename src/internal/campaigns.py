@@ -8,8 +8,9 @@ from src.constants.prompts import (
     get_story_generation_kickstart_prompt,
 )
 from src.internal.date_generator import DateGenerator
-from src.internal.posts import PostGenerator, Scheduler
+from src.internal.posts import Post, PostGenerator, Scheduler
 from src.internal.question_bank_manager import QuestionBankManager
+from src.internal.stats import StatsManager
 from src.utils.leetcode_client import QuestionData
 from src.utils.openai_client import OpenAIClient
 import src.internal.settings as settings
@@ -23,6 +24,7 @@ class Campaign(Scheduler):
         question_bank_manager: QuestionBankManager,  # Reference
         question_bank_name: str,
         date_generator: DateGenerator,
+        stats: StatsManager,
         length: int = -1,  # unlimited
         story_prompt: Optional[str] = None,
     ):
@@ -30,6 +32,8 @@ class Campaign(Scheduler):
 
         self.question_bank_manager = question_bank_manager
         self.question_bank_name = question_bank_name
+
+        self.stats = stats
 
         # Post generator
         self.post_generator = PostGenerator(
@@ -45,7 +49,10 @@ class Campaign(Scheduler):
 
         self.openai_client = OpenAIClient()
 
-        super().__init__(self.post_generator, self.date_generator, repeats=length)
+        # post ids
+        self.posts: List[Post] = []
+
+        super().__init__(self._get_post_func, self.date_generator, repeats=length)
 
     async def init(self):
         # Create campaign class
@@ -62,6 +69,14 @@ class Campaign(Scheduler):
             )
         )
 
+    async def _get_post_func(self):
+        """
+        Add post to internal posts storage
+        """
+        post = await self.post_generator()
+        self.posts.append(post)
+        return post
+
     @override
     def should_post(self):
         # TODO: Disable?
@@ -69,7 +84,7 @@ class Campaign(Scheduler):
             return True
         return self.__should_post_func()
 
-    def _get_story(self, question_data: QuestionData):
+    async def _get_story(self, question_data: QuestionData):
         # This class should have exclusive access over its story_history, so no need for locks
         setup_prompt = (
             USER_STORY_SETUP_PROMPT_TEMPLATE.format(self.story_prompt)
@@ -105,6 +120,18 @@ class Campaign(Scheduler):
                 ),
             }
         )
+
+        # User completion
+        if self.posts:
+            last_post = self.posts[-1]
+            post_id = last_post.id
+            # Post id is actually okay to access, even if campaigns may update id. This is because in asyncio event loop,
+            # this task will run until the next await. So it can't be pre-empted. So we're fine to access here.
+            # post_id should be updated as soon as the post is sent. Will raise attribute error if it doesn't.
+            num_complete, num_total = await self.stats.get_num_users_finished_question(
+                post_id
+            )
+            log.info(f"num_complete: {num_complete}, num_total: {num_total}")
 
         log.info("Running story generation with the following:")
         log.info(inputs)

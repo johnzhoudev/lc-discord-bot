@@ -115,3 +115,17 @@ class StatsManager:
             for stats in self._users.values():
                 res.append(stats.model_copy())
         return res
+
+    async def get_num_users_finished_question(self, post_id: int):
+        """
+        Returns number of users that finished the question, total users
+        """
+        async with self._state_lock:
+            if post_id not in self._post_ids:
+                raise RuntimeError(f"Post id {post_id} invalid!")
+            num_finished = 0
+            for user, stats in self._users.items():
+                if stats.is_question_complete(post_id):
+                    num_finished += 1
+
+            return num_finished, len(self._users)
