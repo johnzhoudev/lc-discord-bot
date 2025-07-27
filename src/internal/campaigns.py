@@ -5,6 +5,7 @@ from src.constants.prompts import (
     STORY_HISTORY_PROMPT_TEMPLATE,
     USER_STORY_SETUP_PROMPT_DEFAULT,
     USER_STORY_SETUP_PROMPT_TEMPLATE,
+    get_story_ending_kickstart_prompt,
     get_story_generation_kickstart_prompt,
 )
 from src.internal.date_generator import DateGenerator
@@ -52,7 +53,12 @@ class Campaign(Scheduler):
         # post ids
         self.posts: List[Post] = []
 
-        super().__init__(self._get_post_func, self.date_generator, repeats=length)
+        # Add one repeat for final story ending
+        super().__init__(
+            self._get_post_func,
+            self.date_generator,
+            repeats=(length + 1) if length >= 0 else -1,
+        )
 
     async def init(self):
         # Create campaign class
@@ -84,8 +90,20 @@ class Campaign(Scheduler):
             return True
         return self.__should_post_func()
 
-    async def _get_story(self, question_data: QuestionData):
+    @override
+    def should_final_post(self):
+        return self.repeats == 1
+
+    @override
+    async def get_final_post(self):
+        res = await self._get_story(None)  # Ending
+        # Have to type it like this and pass None, can' specify a python function type for kwargs
+        self.repeats -= 1
+        return res
+
+    async def _get_story(self, question_data: QuestionData | None):
         # This class should have exclusive access over its story_history, so no need for locks
+        # If question data is not passed, will generate ending story
         setup_prompt = (
             USER_STORY_SETUP_PROMPT_TEMPLATE.format(self.story_prompt)
             or USER_STORY_SETUP_PROMPT_DEFAULT
@@ -128,17 +146,22 @@ class Campaign(Scheduler):
                 f"num_complete: {num_complete}, num_total: {num_total}, percent: {percent_complete}"
             )
 
-        inputs.append(
-            {
-                "role": "user",
-                "content": get_story_generation_kickstart_prompt(
-                    question_data.desc,
-                    len(self.story_history) + 1,
-                    self.length,
-                    last_story_percent_complete=percent_complete,
-                ),
-            }
-        )
+        kickstart_prompt = None
+        if question_data:
+            # Kickstart prompt
+            kickstart_prompt = get_story_generation_kickstart_prompt(
+                question_data.desc,
+                len(self.story_history) + 1,
+                self.length,  # Including ending
+                last_story_percent_complete=percent_complete,
+            )
+        else:
+            # Story ending
+            kickstart_prompt = get_story_ending_kickstart_prompt(
+                last_story_percent_complete=percent_complete,
+            )
+
+        inputs.append({"role": "user", "content": kickstart_prompt})
 
         log.info("Running story generation with the following:")
         log.info(inputs)

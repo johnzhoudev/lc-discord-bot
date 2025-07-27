@@ -28,6 +28,7 @@ from typing import Dict, Optional
 from src.utils.openai_client import OpenAIClient
 from src.utils.string_utils import parse_date_str, parse_days, parse_time_str
 from src.utils.text import (
+    format_story_text,
     get_question_text,
     get_schedule_post_response_text,
     get_stats_text,
@@ -173,37 +174,50 @@ class LeetcodeBot:
         await self.send(text, Channel.BOT)
 
     async def handle_check_for_schedulers(self):
-        # TODO: Make this async safe!
+        async with self.state_lock:  # On schedulers
+            # Make shallow copy so can be reused
+            for scheduled_post in self.schedulers[:]:  # noqa
+                if not scheduled_post.should_post():
+                    continue
 
-        # Make shallow copy so can be reused
-        for scheduled_post in self.schedulers[:]:  # noqa
-            if not scheduled_post.should_post():
-                continue
+                if scheduled_post.should_final_post():
+                    try:
+                        story_text = format_story_text(
+                            await scheduled_post.get_final_post()
+                        )
+                        await self.send(story_text, Channel.MAIN)
+                        assert scheduled_post.should_delete()
+                    except Exception as e:
+                        log.exception(e, "exception occurred when getting final post.")
+                    finally:
+                        self.schedulers.remove(scheduled_post)
+                        log.info(f"Ended and removed campaign {scheduled_post}")
+                        continue
 
-            log.info(f"Scheduling post {scheduled_post.id}")
-            post = await scheduled_post.get_post()
+                log.info(f"Scheduling post {scheduled_post.id}")
+                post = await scheduled_post.get_post()
 
-            if not post:
-                await self.handle_error(FailedToGetPostError(scheduled_post.id))
-                continue
+                if not post:
+                    await self.handle_error(FailedToGetPostError(scheduled_post.id))
+                    continue
 
-            try:
-                await self.post_question(post)
-            except FailedScrapeError as e:
-                await self.handle_error(e, f"Removing scheduler {scheduled_post}")
-                self.schedulers.remove(scheduled_post)
-                continue
-            except Exception as e:
-                log.exception(e)
-                await self.send(
-                    f"Unexpected error posting, removing scheduler {scheduled_post}",
-                    Channel.BOT,
-                )
-                self.schedulers.remove(scheduled_post)
-                continue
+                try:
+                    await self.post_question(post)
+                except FailedScrapeError as e:
+                    await self.handle_error(e, f"Removing scheduler {scheduled_post}")
+                    self.schedulers.remove(scheduled_post)
+                    continue
+                except Exception as e:
+                    log.exception(e)
+                    await self.send(
+                        f"Unexpected error posting, removing scheduler {scheduled_post}",
+                        Channel.BOT,
+                    )
+                    self.schedulers.remove(scheduled_post)
+                    continue
 
-            if scheduled_post.should_delete():
-                self.schedulers.remove(scheduled_post)
+                if scheduled_post.should_delete():
+                    self.schedulers.remove(scheduled_post)
 
     async def handle_campaign(
         self,
