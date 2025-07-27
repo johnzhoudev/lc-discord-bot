@@ -38,7 +38,7 @@ resource "aws_iam_role_policy" "lc_discord_bot_task_policy" {
           "ssm:GetParameters",
         ]
         Effect   = "Allow"
-        Resource = "arn:aws:ssm:us-east-1:273354659414:parameter/lc-discord-bot/BOT_TOKEN"
+        Resource = "arn:aws:ssm:us-east-1:273354659414:parameter/lc-discord-bot/*"
       },
     ]
   })
