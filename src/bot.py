@@ -191,7 +191,10 @@ async def stats(ctx: commands.Context):
 
 
 # Background task to post
-@tasks.loop(seconds=15)
+num_seconds = 15 if is_dev else 60  # 1 minute
+
+
+@tasks.loop(seconds=num_seconds)
 @handle_exceptions
 async def check_for_schedulers():
     await lc_bot.handle_check_for_schedulers()
