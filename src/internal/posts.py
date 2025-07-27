@@ -78,8 +78,8 @@ class Scheduler:
     _id_counter: ClassVar[int] = 0
 
     id: int
-    __get_post_func: Callable[[], Awaitable[Post]]
-    __should_post_func: Callable[
+    _get_post_func: Callable[[], Awaitable[Post]]
+    _should_post_func: Callable[
         [], bool
     ]  # pass datetime.now, will return True if should post
     repeats: int = 1
@@ -95,20 +95,20 @@ class Scheduler:
         )  # One global counter for all Schedulers (even inherited)
         Scheduler._id_counter += 1
 
-        self.__get_post_func = get_post_func
-        self.__should_post_func = should_post_func
+        self._get_post_func = get_post_func
+        self._should_post_func = should_post_func
         self.repeats = repeats
 
     async def get_post(self):
         if self.repeats == 0:
             return None
-        post = await self.__get_post_func()
+        post = await self._get_post_func()
         if self.repeats > 0:
             self.repeats -= 1  # skip if -1
         return post
 
     def should_post(self):
-        return self.__should_post_func()
+        return self._should_post_func()
 
     def should_final_post(self):
         return False

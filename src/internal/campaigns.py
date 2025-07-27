@@ -88,7 +88,7 @@ class Campaign(Scheduler):
         # TODO: Disable?
         if settings.is_dev:
             return True
-        return self.__should_post_func()
+        return self._should_post_func()
 
     @override
     def should_final_post(self):
