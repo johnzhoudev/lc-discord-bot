@@ -97,7 +97,7 @@ class LeetcodeBot:
         async def get_post_url():
             return args.url
 
-        def get_story(*func_args):
+        async def get_story(*func_args):
             return args.story
 
         if args.date_str:
@@ -190,7 +190,15 @@ class LeetcodeBot:
             try:
                 await self.post_question(post)
             except FailedScrapeError as e:
-                await self.handle_error(e, f"Removing question {scheduled_post}")
+                await self.handle_error(e, f"Removing scheduler {scheduled_post}")
+                self.schedulers.remove(scheduled_post)
+                continue
+            except Exception as e:
+                log.exception(e)
+                await self.send(
+                    f"Unexpected error posting, removing scheduler {scheduled_post}",
+                    Channel.BOT,
+                )
                 self.schedulers.remove(scheduled_post)
                 continue
 
@@ -219,6 +227,7 @@ class LeetcodeBot:
             self.question_bank_manager,
             args.question_bank_name,
             date_generator,
+            self.stats,
             length=args.length,
             story_prompt=args.story_prompt,
         )
@@ -259,7 +268,7 @@ class LeetcodeBot:
         self, error: Error, additional_messages: Optional[str] = None
     ):
         # WARNING: DO NOT ACQURIE STATE LOCK HERE!
-        log.error(error.msg)
+        log.exception(error.msg)
         log.info(additional_messages)
         displayed_msg = error.displayed_msg + (
             f"\n{additional_messages}" if additional_messages else ""

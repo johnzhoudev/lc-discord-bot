@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from dataclasses import dataclass, field
 from typing import Awaitable, Callable, ClassVar, Optional
@@ -21,11 +22,14 @@ class Post:
     desc: Optional[str] = None
     story: Optional[str] = None
 
+    # Only mutable state
+    state_lock = asyncio.Lock()
+
     def set_id(self, id):
         self.id = id
 
 
-def _default_get_story_func(*args):
+async def _default_get_story_func(*args):
     return None
 
 
@@ -38,7 +42,7 @@ class PostGenerator:
         get_url_func: Callable[[], Awaitable[str]],
         desc: Optional[str] = None,
         get_story_func: Callable[
-            [QuestionData], str | None
+            [QuestionData], Awaitable[str | None]
         ] = _default_get_story_func,  # Accepts QuestionData and story history
     ):
         """
@@ -62,7 +66,7 @@ class PostGenerator:
         return Post(
             question_data=question_data,
             desc=self.desc,
-            story=self.get_story_func(question_data),
+            story=await self.get_story_func(question_data),
         )
 
 
