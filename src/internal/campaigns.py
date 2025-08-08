@@ -29,8 +29,6 @@ class Campaign(Scheduler):
         length: int = -1,  # unlimited
         story_prompt: Optional[str] = None,
     ):
-        self.length = length
-
         self.question_bank_manager = question_bank_manager
         self.question_bank_name = question_bank_name
 
@@ -152,7 +150,7 @@ class Campaign(Scheduler):
             kickstart_prompt = get_story_generation_kickstart_prompt(
                 question_data.desc,
                 len(self.story_history) + 1,
-                self.length,  # Including ending
+                self.repeats,  # Including ending
                 last_story_percent_complete=percent_complete,
             )
         else:
